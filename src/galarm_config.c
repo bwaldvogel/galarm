@@ -1,4 +1,4 @@
-#include <unistd.h>		/* _exit */
+#include <stdlib.h>		/* exit */
 #include <glib.h>
 #include "galarm_config.h"
 
@@ -13,7 +13,7 @@ void parse_config(void)
 	    (key_file, filename, G_KEY_FILE_KEEP_COMMENTS, &error) == FALSE) {
 		g_debug("loading configuration from %s failed: %s", filename,
 			error->message);
-		_exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	sound_cmd = g_key_file_get_value(key_file,
