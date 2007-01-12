@@ -5,6 +5,5 @@ Options:
 
 	recognize several running timers -> collapse them
 	-c (dont collapse) or something like this
-	-d deamonize (practical when started in a terminal)
 
 · Internationalisation

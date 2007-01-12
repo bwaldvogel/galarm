@@ -9,9 +9,12 @@
 #  include <config.h>
 #endif
 
-#include <unistd.h>		/* _exit, fork */
-#include <time.h>		/* localtime, time, gmtime */
-#include <gtk/gtk.h>		/* 2.10 required */
+#include <unistd.h>   /* fork, chdir */
+#include <stdlib.h>   /* exit */
+#include <sys/stat.h> /* umask */
+#include <errno.h>
+#include <time.h>     /* localtime, time, gmtime */
+#include <gtk/gtk.h>  /* 2.10 required */
 #include <glib.h>
 
 #include "galarm_config.h"
@@ -32,17 +35,12 @@ static GTimer *timer;
 static gchar *alarm_message = NULL;
 
 static GOptionEntry entries[] = {
-	{"daemon", 'd', 0, G_OPTION_ARG_NONE, &daemonize,
-	 "start in daemon mode", NULL},
-	{"quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet, "do not play sounds",
-	 NULL},
+	{"daemon", 'd', 0, G_OPTION_ARG_NONE, &daemonize, "start as daemon", NULL},
+	{"quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet, "do not play sounds", NULL},
 	{"verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Be verbose", NULL},
-	{"stopall", 0, 0, G_OPTION_ARG_NONE, &stopall,
-	 "Stop all running galarm instances", NULL},
-	{"stop-all", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &stopall, NULL,
-	 NULL},
-	{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_remaining,
-	 "Message to display", "TIMEOUT [MESSAGE]"}
+	{"stopall", 0, 0, G_OPTION_ARG_NONE, &stopall, "Stop all running galarm instances", NULL},
+	{"stop-all", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &stopall, NULL, NULL},
+	{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_remaining, "Message to display", "TIMEOUT [MESSAGE]"}
 };
 
 gint quit(gpointer data)
@@ -256,7 +254,7 @@ int main(int argc, char **argv)
 	if (seconds < 0.0l || seconds > MAX_SECONDS) {
 		g_printerr("Please provide a valid timeout (0..%d seconds)\n",
 			   MAX_SECONDS);
-		_exit(EXIT_FAILURE);
+		exit(EXIT_FAILURE);
 	}
 
 	/* the first argument is the timeout value */
@@ -264,9 +262,23 @@ int main(int argc, char **argv)
 		alarm_message = g_strjoinv(" ", opt_remaining + 1);
 
 	if (daemonize) {
+		if (verbose)
+			g_printf("going to daemonize.\n");
 		if (fork() != 0) {
-			_exit(EXIT_SUCCESS);
+			exit(EXIT_SUCCESS);
 		}
+		if (chdir("/") == -1) {
+			fprintf(stderr, "chdir / failed: %s\n", strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+		umask(0);
+        pid_t sid = setsid();
+        if (sid < 0) {
+			exit(EXIT_FAILURE);
+        }
+		close(STDIN_FILENO);
+        close(STDOUT_FILENO);
+        close(STDERR_FILENO);
 	}
 
 	gtk_init(&argc, &argv);
