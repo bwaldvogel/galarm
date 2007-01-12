@@ -1,4 +1,4 @@
 # galarm config file
 [Main]
-sound_cmd = aplay
+#sound_cmd=aplay
 # vim: ft=config
