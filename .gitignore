@@ -8,5 +8,5 @@ autom4te.cache
 aclocal.m4
 config.h.in
 configure.scan
-session.vim
+Session.vim
 config
