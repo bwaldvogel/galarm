@@ -53,8 +53,8 @@ void statusicon_activate(GtkStatusIcon * icon, gpointer data)
 {
 }
 
-gint pause_resume(gpointer data)
-{				/* {{{ */
+gint pause_resume(gpointer data) /* {{{ */
+{
 	if (timer_paused) {
 		g_timer_continue(timer);
 	} else {
@@ -63,7 +63,8 @@ gint pause_resume(gpointer data)
 	timer_paused = !timer_paused;
 
 	return FALSE;		/* don't continue */
-}				/* }}} */
+}
+/* }}} */
 
 void statusicon_popup(GtkStatusIcon * status_icon,	/* {{{ */
 		      guint button, guint activate_time, gpointer user_data)
@@ -91,10 +92,11 @@ void statusicon_popup(GtkStatusIcon * status_icon,	/* {{{ */
 	gtk_menu_popup(GTK_MENU(menu), NULL, NULL,
 		       gtk_status_icon_position_menu,
 		       icon, button, activate_time);
-}				/* }}} */
+}
+/* }}} */
 
-gint play_sound(gpointer data)
-{				/* {{{ */
+gint play_sound(gpointer data) /* {{{ */
+{				
 	if (!quiet) {
 		g_assert(sound_cmd != NULL);
 		char *argv[] = { sound_cmd, "-q", "alert.wav", NULL };
@@ -111,10 +113,11 @@ gint play_sound(gpointer data)
 		g_debug("quiet mode - not playing sounds\n");
 	}
 	return FALSE;		/* don't continue */
-}				/* }}} */
+}
+/* }}} */
 
-gint show_alarm(gpointer data)
-{				/* {{{ */
+gint show_alarm(gpointer data) /* {{{ */
+{
 	/* window */
 	GtkWidget *alarm_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_decorated(GTK_WINDOW(alarm_window), FALSE);
@@ -165,10 +168,11 @@ gint show_alarm(gpointer data)
 	gtk_idle_add(play_sound, NULL);
 
 	return FALSE;
-}				/* }}} */
+}
+/* }}} */
 
-gint galarm_timer(gpointer data)
-{				/* {{{ */
+gint galarm_timer(gpointer data) /* {{{ */
+{
 	gdouble elapsed = g_timer_elapsed(timer, NULL);
 	time_t diff_time = seconds - elapsed;
 
@@ -207,10 +211,11 @@ gint galarm_timer(gpointer data)
 	gtk_status_icon_set_tooltip(icon, buffer);
 
 	return FALSE;		/* don't continue */
-}				/* }}} */
+}
+/* }}} */
 
-int main(int argc, char **argv)
-{				/* {{{ */
+int main(int argc, char **argv) /* {{{ */
+{
 	timer = g_timer_new();
 	g_assert(timer != NULL);
 
@@ -240,15 +245,15 @@ int main(int argc, char **argv)
 	seconds = g_ascii_strtod(opt_remaining[0], &last);
 
 	switch (*last) {
-	case 'h':
-		seconds *= 60.0l;
-	case 'm':
-		seconds *= 60.0l;
-	case 's':
-		break;
-	default:
-		/* default case is 'm' */
-		seconds *= 60.0l;
+		case 'h':
+			seconds *= 60.0l;
+		case 'm':
+			seconds *= 60.0l;
+		case 's':
+			break;
+		default:
+			/* default case is 'm' */
+			seconds *= 60.0l;
 	}
 
 	if (seconds < 0.0l || seconds > MAX_SECONDS) {
@@ -294,6 +299,7 @@ int main(int argc, char **argv)
 	gtk_main();
 
 	return 0;
-}				/* }}} */
+}
+/* }}} */
 
 /* vim: set foldmethod=marker foldlevel=0 : */
