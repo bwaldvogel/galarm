@@ -10,6 +10,8 @@
 #  define EXIT_FAILURE 1
 #endif
 
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
 char *sound_cmd;
 void parse_config(void);
 

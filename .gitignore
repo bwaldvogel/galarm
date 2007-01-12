@@ -1,0 +1,12 @@
+*.o
+.*.swp
+Makefile
+Makefile.in
+stamp-h1
+ChangeLog
+autom4te.cache
+aclocal.m4
+config.h.in
+configure.scan
+session.vim
+config
