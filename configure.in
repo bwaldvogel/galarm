@@ -1,10 +1,10 @@
 # Process this file with autoconf to produce a configure script
 
 AC_PREREQ(2.61)
-AC_INIT([galarm], [0.2.1], [http://0x11.net/galarm])
+AC_INIT([galarm], [0.2.5], [http://0x11.net/galarm])
 AC_CONFIG_AUX_DIR(config)
 
-AM_INIT_AUTOMAKE([0.2.1 dist-bzip2])
+AM_INIT_AUTOMAKE([0.2.5 dist-bzip2])
 AM_CONFIG_HEADER([config.h])
 AM_MAINTAINER_MODE()
 
@@ -51,7 +51,7 @@ AC_C_CONST
 
 # Checks for library functions.
 AC_FUNC_FORK
-AC_CHECK_FUNCS([time localtime gmtime exit fork chdir])
+AC_CHECK_FUNCS([time localtime mktime gmtime exit fork chdir])
 AC_FUNC_STRFTIME
 
 AC_OUTPUT([Makefile

@@ -16,7 +16,12 @@ static gboolean verbose = FALSE;
 static gboolean stopall = FALSE;
 static gchar **opt_remaining = NULL;
 
-static gdouble seconds = 0.0l;
+/* flag which indicates whether we are in
+ * countdown mode or in fixed-endtime mode */
+gboolean countdownMode = TRUE;
+static gdouble secondsToCount = 0.0l; /* countdown mode */
+static time_t endtime = 0;            /* fixed-endtime mode */
+
 static gboolean timer_paused = FALSE;
 static GtkStatusIcon *icon;
 static GTimer *timer;
@@ -34,60 +39,80 @@ static GOptionEntry entries[] = {
 };
 /* }}} */
 
-gint quit(gpointer data) /* {{{ */
+static time_t now(void) /* {{{ */
+{
+	time_t now = time(NULL);
+	if (now == ((time_t)-1)) {
+		g_printerr("time failed: %s\n", g_strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	return now;
+}
+/* }}} */
+
+static void set_endtime(const char* time_str) /* {{{ */
+{
+	time_t n = now();
+	struct tm *temp_end = localtime(&n);
+	unsigned long offset = 0;
+
+	gchar **splits = g_strsplit(time_str, ":", 3);
+
+	/* HOUR */
+	if (splits[0] != NULL) {
+		unsigned long hour = strtoul(splits[0], NULL, 10);
+		if (hour >= 24 || splits[0][0] == 0) {
+			g_printerr("invalid hour: %s\n", g_strerror(ERANGE));
+			exit(EXIT_FAILURE);
+		}
+		/* if hour is before now, assume the next day is meant */
+		if (hour < temp_end->tm_hour)
+			offset = 24 * 60 * 60;
+		temp_end->tm_hour = hour;
+
+		/* MINUTE */
+		if (splits[1] != NULL) {
+			unsigned long min = strtoul(splits[1], NULL, 10);
+			if (min >= 60 || splits[1][0] == 0) {
+				g_printerr("invalid minute: %s\n", g_strerror(ERANGE));
+				exit(EXIT_FAILURE);
+			}
+			temp_end->tm_min = min;
+			/* SECONDS */
+			if (splits[2] != NULL) {
+				unsigned long sec = strtoul(splits[2], NULL, 10);
+				if (sec >= 60 || splits[2][0] == 0) {
+					g_printerr("invalid seconds: %s\n", g_strerror(ERANGE));
+					exit(EXIT_FAILURE);
+				}
+				temp_end->tm_sec = sec;
+			} else {
+				/* case no seconds provided (@17:23 eg) */
+				temp_end->tm_sec = 0;
+			}
+		} else {
+			/* case no minutes and seconds provided (@18 eg) */
+			temp_end->tm_min = 0;
+			temp_end->tm_sec = 0;
+		}
+
+	} else {
+		g_printerr("invalid time\n");
+		exit(EXIT_FAILURE);
+	}
+	g_strfreev(splits);
+	endtime = mktime(temp_end) + offset;
+}
+/* }}} */
+
+static gint quit(gpointer data) /* {{{ */
 {
 	gtk_main_quit();
 	return FALSE;
 }
 /* }}} */
 
-void statusicon_activate(GtkStatusIcon * icon, gpointer data) /* {{{ */
-{
-}
-/* }}} */
-
-gint pause_resume(gpointer data) /* {{{ */
-{
-	if (timer_paused) {
-		g_timer_continue(timer);
-	} else {
-		g_timer_stop(timer);
-	}
-	timer_paused = !timer_paused;
-
-	return FALSE;		/* don't continue */
-}
-/* }}} */
-
-void statusicon_popup(GtkStatusIcon * status_icon, guint button, guint activate_time, gpointer user_data) /* {{{ */
-{
-	/*** CREATE A MENU ***/
-	GtkWidget *menu = gtk_menu_new();
-	GtkWidget *quit_item, *pause_item;
-	quit_item = gtk_menu_item_new_with_label("Quit");
-	if (timer_paused) {
-		pause_item = gtk_menu_item_new_with_label("Continue");
-	} else {
-		pause_item = gtk_menu_item_new_with_label("Pause");
-	}
-
-	g_signal_connect(G_OBJECT(quit_item), "activate", G_CALLBACK(quit),
-			NULL);
-	g_signal_connect(G_OBJECT(pause_item), "activate",
-			G_CALLBACK(pause_resume), NULL);
-
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), pause_item);
-	gtk_menu_shell_append(GTK_MENU_SHELL(menu), quit_item);
-	gtk_widget_show(pause_item);
-	gtk_widget_show(quit_item);
-
-	gtk_menu_popup(GTK_MENU(menu), NULL, NULL,
-			gtk_status_icon_position_menu,
-			icon, button, activate_time);
-}
-/* }}} */
-
-gint play_sound(gpointer data) /* {{{ */
+static gint play_sound(gpointer data) /* {{{ */
 {				
 	if (!quiet)
 	{
@@ -110,7 +135,20 @@ gint play_sound(gpointer data) /* {{{ */
 }
 /* }}} */
 
-gint show_alarm(gpointer data) /* {{{ */
+static gint pause_resume(gpointer data) /* {{{ */
+{
+	if (timer_paused) {
+		g_timer_continue(timer);
+	} else {
+		g_timer_stop(timer);
+	}
+	timer_paused = !timer_paused;
+
+	return FALSE;		/* don't continue */
+}
+/* }}} */
+
+static gint show_alarm(gpointer data) /* {{{ */
 {
 	/* window */
 	GtkWidget *alarm_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -165,18 +203,57 @@ gint show_alarm(gpointer data) /* {{{ */
 }
 /* }}} */
 
-gint galarm_timer(gpointer data) /* {{{ */
+static void statusicon_activate(GtkStatusIcon * icon, gpointer data) /* {{{ */
 {
-	gdouble elapsed = g_timer_elapsed(timer, NULL);
-	time_t diff_time = seconds - elapsed;
+}
+/* }}} */
 
-	g_assert(icon != NULL);
+static void statusicon_popup(GtkStatusIcon * status_icon, guint button, guint activate_time, gpointer user_data) /* {{{ */
+{
+	/*** CREATE A MENU ***/
+	GtkWidget *menu = gtk_menu_new();
+	GtkWidget *quit_item = NULL, *pause_item = NULL;
+	quit_item = gtk_menu_item_new_with_label("Quit");
+	if (countdownMode) {
+		if (timer_paused) {
+			pause_item = gtk_menu_item_new_with_label("Continue");
+		} else {
+			pause_item = gtk_menu_item_new_with_label("Pause");
+		}
+	}
+	if (pause_item != NULL) {
+		g_signal_connect(G_OBJECT(pause_item), "activate", G_CALLBACK(pause_resume), NULL);
+		gtk_menu_shell_append(GTK_MENU_SHELL(menu), pause_item);
+		gtk_widget_show(pause_item);
+	}
+
+	g_signal_connect(G_OBJECT(quit_item), "activate", G_CALLBACK(quit), NULL);
+	gtk_menu_shell_append(GTK_MENU_SHELL(menu), quit_item);
+	gtk_widget_show(quit_item);
+
+	gtk_menu_popup(GTK_MENU(menu), NULL, NULL,
+			gtk_status_icon_position_menu,
+			icon, button, activate_time);
+}
+/* }}} */
+
+static gint galarm_timer(gpointer data) /* {{{ */
+{
+	time_t diff_time = -1; /* default: invalid value */
+
+	if (countdownMode) {
+		gdouble elapsed = g_timer_elapsed(timer, NULL);
+		diff_time = secondsToCount - elapsed;
+	} else {
+		diff_time = endtime - now();
+	}
 
 	if (diff_time <= 0) {
 		gtk_status_icon_set_tooltip(icon, "alarm!");
 		show_alarm(NULL);
 		return FALSE;	/* don't continue */
 	}
+
 	gtk_timeout_add(1000, galarm_timer, NULL);
 
 	if (diff_time <= BLINK_TRESHOLD) {
@@ -185,21 +262,20 @@ gint galarm_timer(gpointer data) /* {{{ */
 
 	gchar buffer[1024];
 	if (timer_paused) {
-		g_snprintf(buffer, 1024, "%s: %02d:%02d:%02d (paused)",
+		g_snprintf(buffer, sizeof(buffer), "%s: %02d:%02d:%02d (paused)",
 				(alarm_message != NULL) ? alarm_message : "alarm",
 				(int)(diff_time / 3600) % 24,
 				(int)(diff_time / 60) % 60, (int)diff_time % 60);
 	} else {
-		time_t end_time = time(NULL) + diff_time;
+		if (countdownMode)
+			endtime = now() + diff_time;
 
-		gint n = g_snprintf(buffer, sizeof(buffer), "%s: ",
-				(alarm_message !=
-				 NULL) ? alarm_message : "alarm");
+		gint n = g_snprintf(buffer, sizeof(buffer), "%s: ", (alarm_message != NULL) ? alarm_message : "alarm");
 
 		n += strftime(buffer + n, sizeof(buffer), "%H:%M:%S",
 				gmtime(&diff_time));
-		n += strftime(buffer + n, sizeof(buffer), " (%H:%M:%S)",
-				localtime(&end_time));
+		n += strftime(buffer + n, sizeof(buffer), " (@%H:%M:%S)",
+				localtime(&endtime));
 	}
 
 	gtk_status_icon_set_tooltip(icon, buffer);
@@ -221,7 +297,7 @@ int main(int argc, char **argv) /* {{{ */
 	context = g_option_context_new(NULL);
 	g_assert(context != NULL);
 	g_option_context_set_summary(context,
-			"Possible Timeout values:\n  5s\t\t5 seconds\n  6.5m\t\t6:30 minutes\n  19\t\t19 minutes\n  7h\t\t7 hours");
+			"Possible Timeout values:\n  5s\t\t5 seconds\n  6.5m\t\t6:30 minutes\n  19\t\t19 minutes\n  7h\t\t7 hours\n  @17\t\tat 17:00 o'clock\n  @17:25\tat 17:25 o'clock");
 	g_option_context_add_main_entries(context, entries, NULL);
 	/* adds GTK+ options */
 	g_option_context_add_group(context, gtk_get_option_group(TRUE));
@@ -232,25 +308,44 @@ int main(int argc, char **argv) /* {{{ */
 	g_option_context_free(context);
 
 	if (opt_remaining == NULL || opt_remaining[0] == NULL) {
-		g_printerr("provide a timeout. see help\n");
+		g_printerr("provide a timeout. see --help\n");
 		exit(EXIT_FAILURE);
 	}
 	gchar *last;
-	seconds = g_ascii_strtod(opt_remaining[0], &last);
 
-	switch (*last) {
-		case 'h':
-			seconds *= 60.0l;
-		case 'm':
-			seconds *= 60.0l;
-		case 's':
-			break;
-		default:
-			/* default case is 'm' */
-			seconds *= 60.0l;
+	if (opt_remaining[0][0] == '@')
+	{
+		countdownMode = FALSE;
+		if (g_utf8_strlen(opt_remaining[0], -1) < 2) {
+			g_printerr("Please provide a valid endtime. see --help\n");
+			exit(EXIT_FAILURE);
+		}
+		set_endtime(&opt_remaining[0][1]);
+	} else {
+		countdownMode = TRUE;
+		/* we use strtod instead of g_ascii_strtod because the latter is local
+		 * INdependent */
+		secondsToCount = strtod(opt_remaining[0], &last);
+		/* provoke an incorrect value on an over- or underflow */
+		if (secondsToCount == HUGE_VAL || secondsToCount == -HUGE_VAL) {
+			g_printerr("strtod failed: %s\n", g_strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+
+		switch (*last) {
+			case 'h':
+				secondsToCount *= 60.0l;
+			case 'm':
+				secondsToCount *= 60.0l;
+			case 's':
+				break;
+			default:
+				/* default case is 'm' */
+				secondsToCount *= 60.0l;
+		}
 	}
 
-	if (seconds < 0.0l || seconds > MAX_SECONDS) {
+	if (secondsToCount < 0.0l || secondsToCount > MAX_SECONDS) {
 		g_printerr("Please provide a valid timeout (0..%d seconds)\n",
 				MAX_SECONDS);
 		exit(EXIT_FAILURE);
@@ -261,13 +356,11 @@ int main(int argc, char **argv) /* {{{ */
 		alarm_message = g_strjoinv(" ", opt_remaining + 1);
 
 	if (daemonize) {
-		if (verbose)
-			g_printf("going to daemonize.\n");
 		if (fork() != 0) {
 			exit(EXIT_SUCCESS);
 		}
 		if (chdir("/") == -1) {
-			fprintf(stderr, "chdir / failed: %s\n", strerror(errno));
+			g_printerr("chdir / failed: %s\n", g_strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 		umask(0);

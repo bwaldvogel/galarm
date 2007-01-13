@@ -7,7 +7,7 @@ static void create_rc(gchar *filename)
 	g_assert(filename != NULL);
 	int rcfile = g_creat(filename, 0644);
 	if (rcfile == -1) {
-		g_printerr("g_creat failed: %s\n", strerror(errno));
+		g_printerr("g_creat failed: %s\n", g_strerror(errno));
 	}
 	gchar template[] = "# galarm config\n[Main]\n#sound_cmd=aplay\n# vim: ft=config";
 	if (!g_file_set_contents(filename, template, -1, &error)) {
