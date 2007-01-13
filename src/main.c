@@ -260,25 +260,35 @@ static gint galarm_timer(gpointer data) /* {{{ */
 		gtk_status_icon_set_blinking(icon, TRUE);
 	}
 
-	gchar buffer[1024];
+	GString *buffer = g_string_sized_new(50);
+	g_string_printf(buffer, "%s: ", (alarm_message != NULL) ? alarm_message : "alarm");
+
+	char timeBuffer[1024];
+	if (strftime(timeBuffer, sizeof(timeBuffer), "%H:%M:%S", gmtime(&diff_time)) == 0) {
+		g_printerr("strftime failed\n");
+		exit(EXIT_FAILURE);
+	}
+	timeBuffer[ARRAY_SIZE(timeBuffer) - 1] = 0;
+	g_string_append_printf(buffer, "%s", timeBuffer);
+
 	if (timer_paused) {
-		g_snprintf(buffer, sizeof(buffer), "%s: %02d:%02d:%02d (paused)",
-				(alarm_message != NULL) ? alarm_message : "alarm",
-				(int)(diff_time / 3600) % 24,
-				(int)(diff_time / 60) % 60, (int)diff_time % 60);
+		g_assert(countdownMode);
+		g_string_append_printf(buffer, " (paused)");
 	} else {
 		if (countdownMode)
 			endtime = now() + diff_time;
 
-		gint n = g_snprintf(buffer, sizeof(buffer), "%s: ", (alarm_message != NULL) ? alarm_message : "alarm");
-
-		n += strftime(buffer + n, sizeof(buffer), "%H:%M:%S",
-				gmtime(&diff_time));
-		n += strftime(buffer + n, sizeof(buffer), " (@%H:%M:%S)",
-				localtime(&endtime));
+		char timeBuffer[1024];
+		if (strftime(timeBuffer, sizeof(timeBuffer), " (@%H:%M:%S)", localtime(&endtime)) == 0) {
+			g_printerr("strftime failed\n");
+			exit(EXIT_FAILURE);
+		}
+		timeBuffer[ARRAY_SIZE(timeBuffer) - 1] = 0;
+		g_string_append_printf(buffer, "%s", timeBuffer);
 	}
 
-	gtk_status_icon_set_tooltip(icon, buffer);
+	gtk_status_icon_set_tooltip(icon, buffer->str);
+	g_string_free(buffer, TRUE);
 
 	return FALSE;		/* don't continue */
 }
