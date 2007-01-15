@@ -3704,6 +3704,8 @@ fi
 
 { echo "$as_me:$LINENO: checking whether to enable debugging support" >&5
 echo $ECHO_N "checking whether to enable debugging support... $ECHO_C" >&6; }
+
+CFLAGS=-fwrapv
 if test x"$enable_debug" = x"yes"; then
 				PLATFORM_CFLAGS="$CFLAGS -Wall -Werror -g3 -ggdb -O0 -Wformat=2"
 else
