@@ -54,7 +54,6 @@ static void set_endtime(const char* time_str) /* {{{ */
 {
 	time_t n = now();
 	struct tm *temp_end = localtime(&n);
-	unsigned long offset = 0;
 
 	gchar **splits = g_strsplit(time_str, ":", 3);
 
@@ -65,9 +64,6 @@ static void set_endtime(const char* time_str) /* {{{ */
 			g_printerr("invalid hour: %s\n", g_strerror(ERANGE));
 			exit(EXIT_FAILURE);
 		}
-		/* if hour is before now, assume the next day is meant */
-		if (hour < temp_end->tm_hour)
-			offset = 24 * 60 * 60;
 		temp_end->tm_hour = hour;
 
 		/* MINUTE */
@@ -101,7 +97,10 @@ static void set_endtime(const char* time_str) /* {{{ */
 		exit(EXIT_FAILURE);
 	}
 	g_strfreev(splits);
-	endtime = mktime(temp_end) + offset;
+	endtime = mktime(temp_end);
+	/* if hour is before now, assume the next day is meant */
+	if (endtime <= n)
+		endtime += 24 * 3600;
 }
 /* }}} */
 
