@@ -332,10 +332,7 @@ int main(int argc, char **argv) /* {{{ */
 		set_endtime(&opt_remaining[0][1]);
 	} else {
 		countdownMode = TRUE;
-		/* we use strtod instead of g_ascii_strtod because the latter is local
-		 * INdependent */
-		secondsToCount = strtod(opt_remaining[0], &last);
-		/* provoke an incorrect value on an over- or underflow */
+		secondsToCount = g_ascii_strtod(opt_remaining[0], &last);
 		if (secondsToCount == HUGE_VAL || secondsToCount == -HUGE_VAL) {
 			g_printerr("strtod failed: %s\n", g_strerror(errno));
 			exit(EXIT_FAILURE);

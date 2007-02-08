@@ -6,4 +6,6 @@ Options:
 	recognize several running timers -> collapse them
 	-c (dont collapse) or something like this
 
+	recognize more time formats: 1:30
+
 · Internationalisation
