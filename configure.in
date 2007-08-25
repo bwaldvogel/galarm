@@ -1,10 +1,10 @@
 # Process this file with autoconf to produce a configure script
 
 AC_PREREQ(2.61)
-AC_INIT([galarm], [0.2.6], [http://0x11.net/galarm])
+AC_INIT([galarm], [0.3.0], [http://0x11.net/galarm])
 AC_CONFIG_AUX_DIR(config)
 
-AM_INIT_AUTOMAKE([0.2.6 dist-bzip2])
+AM_INIT_AUTOMAKE([0.3.0 dist-bzip2])
 AM_CONFIG_HEADER([config.h])
 AM_MAINTAINER_MODE()
 
@@ -18,11 +18,17 @@ PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.10.0,,
 				  AC_MSG_ERROR([GTK+-2.10 is required to compile]))
 PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.12.0,,
 				  AC_MSG_ERROR([GLIB-2.12 is required to compile]))
+PKG_CHECK_MODULES(LIBNOTIFY, libnotify >= 0.3.2,,
+				  AC_MSG_ERROR([libnotify is required to compile]))
 # export for use in Makefile(.am)
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
+
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
+
+AC_SUBST(LIBNOTIFY_CFLAGS)
+AC_SUBST(LIBNOTIFY_LIBS)
 
 dnl ***********************************
 dnl *** Check for debugging support ***
@@ -46,14 +52,14 @@ AC_SUBST([PLATFORM_CFLAGS])
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h time.h])
+AC_CHECK_HEADERS([stdlib.h time.h math.h sys/stat.h errno.h unistd.h fcntl.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 
 # Checks for library functions.
 AC_FUNC_FORK
-AC_CHECK_FUNCS([time localtime mktime gmtime exit fork chdir])
+AC_CHECK_FUNCS([time localtime mktime gmtime exit fork chdir atol])
 AC_FUNC_STRFTIME
 
 AC_OUTPUT([Makefile

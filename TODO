@@ -1,11 +1,14 @@
 Options:
 	stopall (stop ALL timers)
 	pauseall (pause ALL timers)
-	resumeall ...
+	resumeall …
 
 	recognize several running timers -> collapse them
 	-c (dont collapse) or something like this
 
 	recognize more time formats: 1:30
 
+	timeout with more than 24h (eg. ga 26h …)
+
 · Internationalisation
+	24h/12h format (configurable, dependent on locale)

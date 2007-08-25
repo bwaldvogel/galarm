@@ -2,13 +2,13 @@
 
 EXTRA_DIST =
 
-INCLUDES = @GTK_CFLAGS@ @GLIB_CFLAGS@
+INCLUDES = @GLIB_CFLAGS@ @GTK_CFLAGS@
 
 AM_CFLAGS = $(PLATFORM_CFLAGS) -DDATADIR=\"$(datadir)\"
 
 bin_PROGRAMS = galarm
 galarm_SOURCES = main.c galarm_config.c galarm_config.h global.h
-galarm_LDADD = @GTK_LIBS@ @GLIB_LIBS@
+galarm_LDADD = @GTK_LIBS@ @GLIB_LIBS@ -lnotify
 
 # install symlink
 install-data-local:
