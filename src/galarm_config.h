@@ -13,6 +13,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 char *sound_cmd;
+char *popup_timeout;
 void parse_config(void);
 
 #endif /* !__GALARM_CONFIG_H__ */

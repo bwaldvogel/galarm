@@ -9,7 +9,7 @@ static void create_rc(gchar *filename)
 	if (rcfile == -1) {
 		g_printerr("g_creat failed: %s\n", g_strerror(errno));
 	}
-	gchar template[] = "# galarm config\n[Main]\n#sound_cmd=aplay\n# vim: ft=config";
+	gchar template[] = "# galarm config\n[Main]\n# sound_cmd=aplay\n# popup_timeout=5000\n# vim: ft=config";
 	if (!g_file_set_contents(filename, template, -1, &error)) {
 		g_assert(error != NULL);
 		g_printerr("%s\n", error->message);
@@ -39,9 +39,17 @@ void parse_config(void)
 	sound_cmd = g_key_file_get_value(key_file,
 			g_key_file_get_start_group(key_file),
 			"sound_cmd", &error);
-
 	if (sound_cmd == NULL || g_utf8_collate(sound_cmd, "") == 0) {
 		g_printerr("please provide a sound_cmd in the config file.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	popup_timeout = g_key_file_get_value(key_file,
+			g_key_file_get_start_group(key_file),
+			"popup_timeout", &error);
+	if (popup_timeout == NULL || g_utf8_collate(popup_timeout, "") == 0) {
+		g_printerr("please provide a popup_timeout valud in the config file.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	g_free(filename);

@@ -1,4 +1,5 @@
 # galarm config file
 [Main]
-#sound_cmd=aplay
+# sound_cmd=aplay
+# popup_timeout=5000
 # vim: ft=config

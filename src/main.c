@@ -195,24 +195,24 @@ static gint quit(gpointer data)
 		g_printerr("notify_notification_close: %s\n", error->message);
 		error = NULL;
 	}
+	notification = NULL;
 	gtk_main_quit();
 	return FALSE;
 }
 
+static void interrupt(int a) {
+	quit(0);
+}
+
 static gint play_sound(gpointer data)
 {
-	if (sound_cmd == NULL || g_utf8_collate(sound_cmd, "") == 0) {
-		g_printerr("please provide a sound_cmd in the config file.\n");
-	} else {
-
-		char *argv[] = { sound_cmd, "alert.wav", NULL };
-		g_spawn_async(DATADIR "/sounds/galarm", argv, NULL,
-				G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error);
-		if (error != NULL) {
-			g_printerr("g_spawn_async: %s\n", error->message);
-			error = NULL;
-			exit(EXIT_FAILURE);
-		}
+	char *argv[] = { sound_cmd, "alert.wav", NULL };
+	g_spawn_async(DATADIR "/sounds/galarm", argv, NULL,
+			G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error);
+	if (error != NULL) {
+		g_printerr("g_spawn_async: %s\n", error->message);
+		error = NULL;
+		exit(EXIT_FAILURE);
 	}
 	return FALSE;		/* don't continue */
 }
@@ -246,7 +246,7 @@ static void prepare_notification (void)
 		notify_notification_set_icon_from_pixbuf(notification, icon);
 	}
 	notify_notification_set_urgency (notification, NOTIFY_URGENCY_CRITICAL);
-	notify_notification_set_timeout(notification, 5000);
+	notify_notification_set_timeout(notification, atol(popup_timeout));
 }
 
 static gint show_alarm(gpointer data)
@@ -362,6 +362,9 @@ static gint galarm_timer(gpointer data)
 
 int main(int argc, char **argv)
 {
+
+	signal(SIGINT, interrupt);
+
 	timer = g_timer_new();
 	g_assert(timer != NULL);
 

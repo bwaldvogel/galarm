@@ -6,5 +6,7 @@ Options:
 	recognize several running timers -> collapse them
 	-c (dont collapse) or something like this
 
+	add option to specify popup-urgency
+
 · Internationalisation
 	24h/12h format (configurable, dependent on locale)
