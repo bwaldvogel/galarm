@@ -2,8 +2,8 @@
  * written by Benedikt Waldvogel, bene /at/ 0x11.net
  * Oct 2006 - Aug 2007
  *
- * Requires GTK+ 2.14 because of Perl-compatible regular expressions
- * -- Requires GTK+ 2.10 because of GtkStatusIcon
+ * Requires GLIB 2.14 because of Perl-compatible regular expressions
+ * Requires GTK+ 2.10 because of GtkStatusIcon
  */
 #include "global.h"
 
@@ -305,11 +305,13 @@ static gint galarm_timer(gpointer data)
 	}
 
 	if (diff_time <= 0) {
-		gtk_status_icon_set_tooltip(icon, "alarm!");
+		GString *buffer = g_string_sized_new(50);
+		g_string_printf(buffer, "alarm: %s", alarm_message);
+		gtk_status_icon_set_tooltip(icon, buffer->str);
+		g_string_free(buffer, TRUE);
 		show_alarm(NULL);
 		return FALSE;	/* don't continue */
 	}
-
 	gtk_timeout_add(1000, galarm_timer, NULL);
 
 	if (diff_time <= BLINK_TRESHOLD) {
