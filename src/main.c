@@ -67,7 +67,7 @@ static void set_endtime(const char* time_str)
 		@12:30 → at half past 12pm
 		@9pm   → 21 o'clock
 	*/
-	GRegex *reltime = g_regex_new("^(?P<First>\\d{1,5})(?P<Part2>(?P<Format>[:,.])(?P<Second>\\d{1,6}))?(?P<Qualifier>[dhms]?)$",
+	GRegex *reltime = g_regex_new("^(?P<Number>(?P<First>\\d{1,5})(?P<Part2>(?P<Format>[:,.])(?P<Second>\\d{1,6}))?)(?P<Qualifier>[dhms]?)$",
 			G_REGEX_CASELESS | G_REGEX_OPTIMIZE, 0, &error);
 	if (reltime == NULL) {
 		g_printerr("g_regex_new: %s\n", error->message);
@@ -85,6 +85,7 @@ static void set_endtime(const char* time_str)
 	GMatchInfo *matchinfo;
 
 	if (g_regex_match(reltime, time_str, 0, &matchinfo)) {
+		gchar  *number     = g_match_info_fetch_named (matchinfo, "Number");
 		gchar  *first      = g_match_info_fetch_named (matchinfo, "First");
 		gchar  *part2      = g_match_info_fetch_named (matchinfo, "Part2");
 		gchar  *format     = g_match_info_fetch_named (matchinfo, "Format");
@@ -111,8 +112,9 @@ static void set_endtime(const char* time_str)
 		}
 
 		if (part2[0]) {
-			long double f,v;
 			glong   second_num = atol(second);
+			long double f;
+			gdouble v;
 			switch (format[0]) {
 				case ':':
 					if (second_num >= 60) {
@@ -123,14 +125,11 @@ static void set_endtime(const char* time_str)
 					f += (long double)second_num/60.0;
 					secondsToCount *= f;
 					break;
-				case '.':
 				case ',':
-					f = first_num;
-					// 923823 → 0.923823
-					v = second_num;
-					while (v>1) v/=(long double)10;
-					f += v;
-					secondsToCount *= f;
+				case '.':
+					v = g_ascii_strtod(number, NULL);
+					g_printf("number: %s → %lf\n", number, v);
+					secondsToCount *= v;
 
 					break;
 				default:
@@ -141,7 +140,7 @@ static void set_endtime(const char* time_str)
 		} else {
 			secondsToCount *= first_num;
 		}
-		g_free(first), g_free(part2), g_free(format), g_free(second), g_free(qualifier);
+		g_free(number), g_free(first), g_free(part2), g_free(format), g_free(second), g_free(qualifier);
 
 	} else if (g_regex_match(abstime, time_str, 0, &matchinfo)) {
 
@@ -326,7 +325,11 @@ static gint galarm_timer(gpointer data)
 		exit(EXIT_FAILURE);
 	}
 	timeBuffer[ARRAY_SIZE(timeBuffer) - 1] = 0;
-	g_string_append_printf(buffer, "%s", timeBuffer);
+	if (diff_time > 24*3600) {
+		g_string_append_printf(buffer, "%ldd %s", diff_time/(24*3600), timeBuffer);
+	} else {
+		g_string_append_printf(buffer, "%s", timeBuffer);
+	}
 
 	if (timer_paused) {
 		g_assert(countdownMode);
@@ -336,7 +339,14 @@ static gint galarm_timer(gpointer data)
 			endtime = now() + diff_time;
 
 		char timeBuffer[1024];
-		if (strftime(timeBuffer, sizeof(timeBuffer), " (@%H:%M:%S)", localtime(&endtime)) == 0) {
+		gint ret = 0;
+
+		if (diff_time < 24*3600)
+			ret = strftime(timeBuffer, sizeof(timeBuffer), " (@%H:%M:%S)", localtime(&endtime));
+		else
+			ret = strftime(timeBuffer, sizeof(timeBuffer), " (@%d.%m. %H:%M:%S)", localtime(&endtime));
+
+		if (ret == 0) {
 			g_printerr("strftime failed\n");
 			exit(EXIT_FAILURE);
 		}
