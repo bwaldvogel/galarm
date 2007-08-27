@@ -14,7 +14,7 @@ static const guint          BLINK_TRESHOLD    = 10;
 static gboolean             daemonize         = FALSE;
 static gboolean             quiet             = FALSE;
 static gboolean             verbose           = FALSE;
-static gboolean             stopall           = FALSE;
+/* static gboolean             stopall           = FALSE; */
 static gchar              **opt_remaining     = NULL;
 
 /* flag which indicates whether we are in
@@ -36,8 +36,8 @@ static GOptionEntry entries[] = {
 	{"daemon", 'd', 0, G_OPTION_ARG_NONE, &daemonize, "start as daemon", NULL},
 	{"quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet, "do not play sounds", NULL},
 	{"verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Be verbose", NULL},
-	{"stopall", 0, 0, G_OPTION_ARG_NONE, &stopall, "Stop all running galarm instances", NULL},
-	{"stop-all", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &stopall, NULL, NULL},
+	/* {"stopall", 0, 0, G_OPTION_ARG_NONE, &stopall, "Stop all running galarm instances", NULL}, */
+	/* {"stop-all", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &stopall, NULL, NULL}, */
 	{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_remaining, "Message to display", "TIMEOUT [MESSAGE]"}
 };
 
@@ -51,10 +51,14 @@ static time_t now(void)
 	return now;
 }
 
-static void set_endtime(const char* time_str)
+static struct tm* now_t(void)
 {
 	time_t n = now();
+	return localtime(&n);
+}
 
+static void set_endtime(const char* time_str)
+{
 	/* RELATIVE TIME FORMATS
 		1.5d   → 36 hours
 		1,2m   → 1 minute and 12 seconds
@@ -67,14 +71,14 @@ static void set_endtime(const char* time_str)
 		@12:30 → at half past 12pm
 		@9pm   → 21 o'clock
 	*/
-	GRegex *reltime = g_regex_new("^(?P<Number>(?P<First>\\d{1,5})(?P<Part2>(?P<Format>[:,.])(?P<Second>\\d{1,6}))?)(?P<Qualifier>[dhms]?)$",
+	GRegex *reltime = g_regex_new("^(?P<First>\\d{1,5})(?P<Part2>(?P<Format>[:,.])(?P<Second>\\d{1,6}))?(?P<Qualifier>[dhms]?)$",
 			G_REGEX_CASELESS | G_REGEX_OPTIMIZE, 0, &error);
 	if (reltime == NULL) {
 		g_printerr("g_regex_new: %s\n", error->message);
 		error = NULL;
 		exit(EXIT_FAILURE);
 	}
-	GRegex *abstime = g_regex_new("^\\@(?P<Hour>\\d{1,2})(:(?P<Minute>[0-5]?[0-9]))?(:(?P<Second>[0-5]?[0-9]))?(?P<AmPm>[ap]m)?$",
+	GRegex *abstime = g_regex_new("^\\@(?P<Hour>\\d{1,2})(:(?P<Minute>[0-5]?[0-9]))?(:(?P<Second>[0-5]?[0-9]))?(?P<AmPm>[ap]\\.?m\\.?)?$",
 			G_REGEX_CASELESS | G_REGEX_OPTIMIZE, 0, &error);
 	if (abstime == NULL) {
 		g_printerr("g_regex_new: %s\n", error->message);
@@ -85,13 +89,13 @@ static void set_endtime(const char* time_str)
 	GMatchInfo *matchinfo;
 
 	if (g_regex_match(reltime, time_str, 0, &matchinfo)) {
-		gchar  *number     = g_match_info_fetch_named (matchinfo, "Number");
-		gchar  *first      = g_match_info_fetch_named (matchinfo, "First");
-		gchar  *part2      = g_match_info_fetch_named (matchinfo, "Part2");
-		gchar  *format     = g_match_info_fetch_named (matchinfo, "Format");
-		gchar  *second     = g_match_info_fetch_named (matchinfo, "Second");
-		gchar  *qualifier  = g_match_info_fetch_named (matchinfo, "Qualifier");
-		glong   first_num  = atol(first);
+		gchar *first      = g_match_info_fetch_named (matchinfo, "First");
+		gchar *part2      = g_match_info_fetch_named (matchinfo, "Part2");
+		gchar *format     = g_match_info_fetch_named (matchinfo, "Format");
+		gchar *second     = g_match_info_fetch_named (matchinfo, "Second");
+		gchar *qualifier  = g_match_info_fetch_named (matchinfo, "Qualifier");
+		glong  first_num  = atol(first);
+		glong  second_num = 0;
 		// days, hours, minutes and seconds
 		// default is minutes
 		switch (qualifier[0]) {
@@ -111,36 +115,31 @@ static void set_endtime(const char* time_str)
 				break;
 		}
 
+		// calculate the fraction here
+		long double frac = 0;
 		if (part2[0]) {
-			glong   second_num = atol(second);
-			long double f;
-			gdouble v;
+			size_t i;
 			switch (format[0]) {
 				case ':':
+					second_num = atol(second);
 					if (second_num >= 60) {
 						g_printerr("provide a valid timeout. see --help\n");
 						exit(EXIT_FAILURE);
 					}
-					f = first_num;
-					f += (long double)second_num/60.0;
-					secondsToCount *= f;
+					frac = second_num / 60.0L;
 					break;
 				case ',':
 				case '.':
-					v = g_ascii_strtod(number, NULL);
-					g_printf("number: %s → %lf\n", number, v);
-					secondsToCount *= v;
-
+					i = 0;
+					while (second[i]) {
+						frac += (second[i] - '0') / (long double)pow(10, i+1);
+						i++;
+					}
 					break;
-				default:
-					// this mustn't happen since we catch the format in the regex
-					// and this switch case 'should' be closely tied to the pattern
-					g_assert(FALSE);
 			}
-		} else {
-			secondsToCount *= first_num;
 		}
-		g_free(number), g_free(first), g_free(part2), g_free(format), g_free(second), g_free(qualifier);
+		secondsToCount *= first_num + frac;
+		g_free(first), g_free(part2), g_free(format), g_free(second), g_free(qualifier);
 
 	} else if (g_regex_match(abstime, time_str, 0, &matchinfo)) {
 
@@ -157,10 +156,10 @@ static void set_endtime(const char* time_str)
 			exit(EXIT_FAILURE);
 		}
 
-		if (ampm && g_strncasecmp(ampm, "pm", 2) == 0)
+		if (ampm && (ampm[0] == 'P' || ampm[0] == 'p')) // PM
 			h+=12;
 
-		struct tm *end = localtime(&n);
+		struct tm *end = now_t();
 		end->tm_hour = h;
 
 		if (minute)
@@ -177,7 +176,7 @@ static void set_endtime(const char* time_str)
 		/* if hour is before now, assume the next day is meant */
 		endtime = mktime(end);
 
-		if (endtime <= n)
+		if (end->tm_yday != now_t()->tm_yday)
 			endtime += 24 * 3600;
 
 	} else {
@@ -319,7 +318,7 @@ static gint galarm_timer(gpointer data)
 	}
 
 	GString *buffer = g_string_sized_new(50);
-	g_string_printf(buffer, "%s: ", alarm_message);
+	g_string_append_printf(buffer, "%s: ", alarm_message);
 
 	char timeBuffer[1024];
 	if (strftime(timeBuffer, sizeof(timeBuffer), "%H:%M:%S", gmtime(&diff_time)) == 0) {
@@ -328,7 +327,8 @@ static gint galarm_timer(gpointer data)
 	}
 	timeBuffer[ARRAY_SIZE(timeBuffer) - 1] = 0;
 	if (diff_time > 24*3600) {
-		g_string_append_printf(buffer, "%ldd %s", diff_time/(24*3600), timeBuffer);
+		int days = diff_time/(24*3600);
+		g_string_append_printf(buffer, "%d day%s %s", days, (days>1)?"s":"", timeBuffer);
 	} else {
 		g_string_append_printf(buffer, "%s", timeBuffer);
 	}
@@ -342,8 +342,9 @@ static gint galarm_timer(gpointer data)
 
 		char timeBuffer[1024];
 		gint ret = 0;
+		struct tm* end = localtime(&endtime);
 
-		if (diff_time < 24*3600)
+		if (end->tm_yday == now_t()->tm_yday)
 			ret = strftime(timeBuffer, sizeof(timeBuffer), " (@%H:%M:%S)", localtime(&endtime));
 		else
 			ret = strftime(timeBuffer, sizeof(timeBuffer), " (@%d.%m. %H:%M:%S)", localtime(&endtime));
@@ -378,8 +379,8 @@ int main(int argc, char **argv)
 	context = g_option_context_new(NULL);
 	g_assert(context != NULL);
 	g_option_context_set_help_enabled(context, TRUE);
-	/* g_option_context_set_summary(context,
-			"Possible Timeout values:\n  5s\t\t5 seconds\n  6.5m\t\t6:30 minutes\n  19\t\t19 minutes\n  7h\t\t7 hours\n  @17\t\tat 17:00 o'clock\n  @17:25\tat 17:25 o'clock"); */
+	g_option_context_set_summary(context,
+			"Possible Timeout values:\n  5s\t\t5 seconds\n  6.5m\t\t6:30 minutes\n  19\t\t19 minutes\n  7h\t\t7 hours\n  1,5d\t\t36 hours\n  @17\t\tat 17:00 o'clock\n  @17:25\tat 17:25 o'clock\n  @9.5pm\tat 21:30 o'clock");
 	g_option_context_add_main_entries(context, entries, NULL);
 
 	/* adds GTK+ options */
