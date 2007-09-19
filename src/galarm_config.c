@@ -9,7 +9,7 @@ static void create_rc(gchar *filename)
 	if (rcfile == -1) {
 		g_printerr("g_creat failed: %s\n", g_strerror(errno));
 	}
-	gchar template[] = "# galarm config\n[Main]\n# sound_cmd=aplay\n# popup_timeout=5000\n# vim: ft=config";
+	gchar template[] = "# galarm config\n[Main]\n# sound_cmd=aplay\n# popup_timeout=5000\n# vim: set ft=config :";
 	if (!g_file_set_contents(filename, template, -1, &error)) {
 		g_assert(error != NULL);
 		g_printerr("%s\n", error->message);
