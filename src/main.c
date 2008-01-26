@@ -5,7 +5,32 @@
  * Requires GLIB 2.14 because of Perl-compatible regular expressions
  * Requires GTK+ 2.10 because of GtkStatusIcon
  */
-#include "global.h"
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif
+
+#include <unistd.h>      /* fork, chdir */
+#include <stdlib.h>      /* exit */
+#include <math.h>        /* HUGE_VAL */
+#include <sys/stat.h>    /* umask */
+#include <errno.h>
+#include <signal.h>
+#include <time.h>        /* localtime, time, gmtime */
+#include <fcntl.h>       /* creat - g_creat needs it! (?) */
+
+#include <gtk/gtk.h>     /* 2.10 required */
+#include <glib.h>        /* 2.14 required */
+#include <glib/gstdio.h> /* g_creat */
+#include <libnotify/notify.h>
+
+#ifndef EXIT_SUCCESS
+#  define EXIT_SUCCESS 0
+#endif
+#ifndef EXIT_FAILURE
+#  define EXIT_FAILURE 1
+#endif
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 /* globals */
 static const guint          MAX_SECONDS       = 7 *24 *3600;
@@ -29,6 +54,9 @@ static GTimer              *timer;
 static gchar               *alarm_message     = NULL;
 static gchar                DEFAULT_MESSAGE[] = "alarm";
 
+static gchar               *sound_cmd         = NULL;
+static long                popup_timeout      = 5000;
+
 static GError              *error             = NULL;
 static NotifyNotification  *notification      = NULL;
 
@@ -40,6 +68,62 @@ static GOptionEntry entries[] = {
 	/* {"stop-all", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &stopall, NULL, NULL}, */
 	{G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_remaining, "Message to display", "TIMEOUT [MESSAGE]"}
 };
+
+static void create_rc(gchar *filename)
+{
+	g_assert(filename != NULL);
+	int rcfile = g_creat(filename, 0644);
+	if (rcfile == -1) {
+		g_printerr("g_creat failed: %s\n", g_strerror(errno));
+	}
+	gchar template[] = "# galarm config\n[Main]\n# sound_cmd=aplay\n# popup_timeout=5.0\n# vim: set ft=config :";
+	if (!g_file_set_contents(filename, template, -1, &error)) {
+		g_assert(error != NULL);
+		g_printerr("%s\n", error->message);
+		exit(EXIT_FAILURE);
+	}
+	g_debug("%s created", filename);
+}
+
+static void parse_config(void)
+{
+	GKeyFile *key_file = g_key_file_new();
+	gchar *filename = g_strconcat(g_get_home_dir(), "/.galarmrc", NULL);
+	GError *error = NULL;
+
+	if (!g_file_test (filename, G_FILE_TEST_EXISTS)) {
+		create_rc(filename);
+	}
+
+	if (g_key_file_load_from_file
+			(key_file, filename, G_KEY_FILE_KEEP_COMMENTS, &error) == FALSE) {
+		g_debug("loading configuration from %s failed: %s", filename,
+				error->message);
+		exit(EXIT_FAILURE);
+	}
+
+	sound_cmd = g_key_file_get_value(key_file,
+			g_key_file_get_start_group(key_file),
+			"sound_cmd", &error);
+
+	if (sound_cmd == NULL || g_utf8_collate(sound_cmd, "") == 0) {
+		g_printerr("please provide a sound_cmd in the config file.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	gchar *timeout = g_key_file_get_value(key_file,
+			g_key_file_get_start_group(key_file),
+			"popup_timeout", &error);
+
+	if (timeout == NULL || g_utf8_collate(timeout, "") == 0) {
+		g_printerr("please provide a popup_timeout valud in the config file.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	popup_timeout = atof(timeout) * 1000;
+
+	g_free(filename);
+}
 
 static time_t now(void)
 {
@@ -205,6 +289,8 @@ static void interrupt(int a) {
 
 static gint play_sound(gpointer data)
 {
+	g_assert(sound_cmd != NULL);
+
 	char *argv[] = { sound_cmd, "alert.wav", NULL };
 	g_spawn_async(DATADIR "/sounds/galarm", argv, NULL,
 			G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error);
@@ -245,7 +331,7 @@ static void prepare_notification (void)
 		notify_notification_set_icon_from_pixbuf(notification, icon);
 	}
 	notify_notification_set_urgency (notification, NOTIFY_URGENCY_CRITICAL);
-	notify_notification_set_timeout(notification, atol(popup_timeout));
+	notify_notification_set_timeout(notification, popup_timeout);
 }
 
 static gint show_alarm(gpointer data)
@@ -294,7 +380,9 @@ static void statusicon_popup(GtkStatusIcon * status_icon, guint button, guint ac
 /* this function is called periodically */
 static gint galarm_timer(gpointer data)
 {
-	time_t diff_time = -1; /* default: invalid value */
+	gdouble diff_time;
+	char    timeBuffer[32];
+	size_t  ret;
 
 	if (countdownMode) {
 		gdouble elapsed = g_timer_elapsed(timer, NULL);
@@ -303,7 +391,9 @@ static gint galarm_timer(gpointer data)
 		diff_time = endtime - now();
 	}
 
-	if (diff_time <= 0) {
+	if (diff_time <= 0)
+	{
+		g_debug("endtime is in past");
 		GString *buffer = g_string_sized_new(50);
 		g_string_printf(buffer, "alarm: %s", alarm_message);
 		gtk_status_icon_set_tooltip(icon, buffer->str);
@@ -320,14 +410,16 @@ static gint galarm_timer(gpointer data)
 	GString *buffer = g_string_sized_new(50);
 	g_string_append_printf(buffer, "%s: ", alarm_message);
 
-	char timeBuffer[1024];
-	if (strftime(timeBuffer, sizeof(timeBuffer), "%H:%M:%S", gmtime(&diff_time)) == 0) {
-		g_printerr("strftime failed\n");
+	time_t tt = labs(diff_time);
+	ret = strftime(timeBuffer, sizeof(timeBuffer), "%H:%M:%S", gmtime(&tt));
+	if (ret == 0 || ret >= sizeof(timeBuffer)) {
+		g_printerr("strftime failed or buffer too small\n");
 		exit(EXIT_FAILURE);
 	}
-	timeBuffer[ARRAY_SIZE(timeBuffer) - 1] = 0;
-	if (diff_time > 24*3600) {
-		int days = diff_time/(24*3600);
+
+	/* more than one day */
+	if (diff_time > 24*3600.0) {
+		int days = diff_time/(24*3600.0);
 		g_string_append_printf(buffer, "%d day%s %s", days, (days>1)?"s":"", timeBuffer);
 	} else {
 		g_string_append_printf(buffer, "%s", timeBuffer);
@@ -340,8 +432,6 @@ static gint galarm_timer(gpointer data)
 		if (countdownMode)
 			endtime = now() + diff_time;
 
-		char timeBuffer[1024];
-		gint ret = 0;
 		struct tm* end = localtime(&endtime);
 
 		if (end->tm_yday == now_t()->tm_yday)
@@ -349,11 +439,10 @@ static gint galarm_timer(gpointer data)
 		else
 			ret = strftime(timeBuffer, sizeof(timeBuffer), " (@%d.%m. %H:%M:%S)", localtime(&endtime));
 
-		if (ret == 0) {
-			g_printerr("strftime failed\n");
+		if (ret == 0 || ret >= sizeof(timeBuffer)) {
+			g_printerr("strftime failed or buffer too small\n");
 			exit(EXIT_FAILURE);
 		}
-		timeBuffer[ARRAY_SIZE(timeBuffer) - 1] = 0;
 		g_string_append_printf(buffer, "%s", timeBuffer);
 	}
 
@@ -441,4 +530,4 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-// vim: set foldmethod=syntax foldlevel=0 :
+// vim: set foldmethod=syntax :

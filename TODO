@@ -7,6 +7,12 @@ Options:
 	-c (dont collapse) or something like this
 
 	add option to specify popup-urgency
+	popup_timeout -> float (s)
 
 · Internationalisation
 	24h/12h format (configurable, dependent on locale)
+
+· If description is a link: make it clickable
+
+· option to just count the time while beeing "online" so the time during
+  suspend-to-ram eg. isn't counted

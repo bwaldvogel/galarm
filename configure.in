@@ -45,7 +45,7 @@ if test x"$enable_debug" = x"yes"; then
 	dnl properly with newer compilers.
 	PLATFORM_CFLAGS="$CFLAGS -Wall -Werror -g3 -ggdb -O0 -Wformat=2"
 else
-	PLATFORM_CFLAGS="$CFLAGS -O3"
+	PLATFORM_CFLAGS="$CFLAGS -O3 -DNDEBUG"
 fi
 AC_MSG_RESULT([$enable_debug])
 AC_SUBST([PLATFORM_CFLAGS])
