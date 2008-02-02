@@ -16,3 +16,4 @@ galarm*.tar.*
 src/.deps*
 src/galarm
 stamp-h1
+tags

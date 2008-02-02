@@ -75,6 +75,7 @@ static void create_rc(gchar *filename)
 	int rcfile = g_creat(filename, 0644);
 	if (rcfile == -1) {
 		g_printerr("g_creat failed: %s\n", g_strerror(errno));
+		return;
 	}
 	gchar template[] = "# galarm config\n[Main]\n# sound_cmd=aplay\n# popup_timeout=5.0\n# vim: set ft=config :";
 	if (!g_file_set_contents(filename, template, -1, &error)) {
@@ -141,7 +142,92 @@ static struct tm* now_t(void)
 	return localtime(&n);
 }
 
-static void set_endtime(const char* time_str)
+static void parse_reltime(gchar *first, gchar *part2, gchar *format,
+		gchar *second, gchar *qualifier)
+{
+	glong  first_num  = atol(first);
+	glong  second_num = 0;
+	// days, hours, minutes and seconds
+	// default is minutes
+	switch (qualifier[0]) {
+		case 'd':
+			secondsToCount = 24*3600;
+			break;
+		case 'h':
+			secondsToCount = 3600;
+			break;
+		case 's':
+			secondsToCount = 1;
+			break;
+		case 'm':
+		case '\0':
+		default:
+			secondsToCount = 60;
+			break;
+	}
+
+	// calculate the fraction here
+	long double frac = 0;
+	if (part2[0]) {
+		size_t i;
+		switch (format[0]) {
+			case ':':
+				second_num = atol(second);
+				if (second_num >= 60) {
+					g_printerr("provide a valid timeout. see --help\n");
+					exit(EXIT_FAILURE);
+				}
+				frac = second_num / 60.0L;
+				break;
+			case ',':
+			case '.':
+				i = 0;
+				while (second[i]) {
+					frac += (second[i] - '0') / (long double)pow(10, i+1);
+					i++;
+				}
+				break;
+		}
+	}
+	secondsToCount *= first_num + frac;
+}
+
+static void parse_abstime(gchar *hour, gchar *minute, gchar *seconds,
+		gchar *ampm)
+{
+	glong  h       = atol(hour);
+
+	if (h>=24) {
+		g_printerr("provide a valid timeout. see --help\n");
+		exit(EXIT_FAILURE);
+	}
+
+	g_debug("fixedend");
+
+	if (ampm && (ampm[0] == 'P' || ampm[0] == 'p')) // PM
+		h+=12;
+
+	struct tm *end = now_t();
+	end->tm_hour = h;
+
+	if (minute)
+		end->tm_min = atol(minute);
+	else
+		end->tm_min = 0;
+
+	if (seconds)
+		end->tm_sec = atol(seconds);
+	else
+		end->tm_sec = 0;
+
+	endtime = mktime(end);
+
+	/* if end is before now, assume the next day is meant */
+	if (endtime < now())
+		endtime += 24 * 3600;
+}
+
+static void parse_endtime(const char* time_str)
 {
 	/* RELATIVE TIME FORMATS
 		1.5d   → 36 hours
@@ -172,96 +258,29 @@ static void set_endtime(const char* time_str)
 
 	GMatchInfo *matchinfo;
 
-	if (g_regex_match(reltime, time_str, 0, &matchinfo)) {
+	if (g_regex_match(reltime, time_str, 0, &matchinfo))
+	{
 		gchar *first      = g_match_info_fetch_named (matchinfo, "First");
 		gchar *part2      = g_match_info_fetch_named (matchinfo, "Part2");
 		gchar *format     = g_match_info_fetch_named (matchinfo, "Format");
 		gchar *second     = g_match_info_fetch_named (matchinfo, "Second");
 		gchar *qualifier  = g_match_info_fetch_named (matchinfo, "Qualifier");
-		glong  first_num  = atol(first);
-		glong  second_num = 0;
-		// days, hours, minutes and seconds
-		// default is minutes
-		switch (qualifier[0]) {
-			case 'd':
-				secondsToCount = 24*3600;
-				break;
-			case 'h':
-				secondsToCount = 3600;
-				break;
-			case 's':
-				secondsToCount = 1;
-				break;
-			case 'm':
-			case '\0':
-			default:
-				secondsToCount = 60;
-				break;
-		}
 
-		// calculate the fraction here
-		long double frac = 0;
-		if (part2[0]) {
-			size_t i;
-			switch (format[0]) {
-				case ':':
-					second_num = atol(second);
-					if (second_num >= 60) {
-						g_printerr("provide a valid timeout. see --help\n");
-						exit(EXIT_FAILURE);
-					}
-					frac = second_num / 60.0L;
-					break;
-				case ',':
-				case '.':
-					i = 0;
-					while (second[i]) {
-						frac += (second[i] - '0') / (long double)pow(10, i+1);
-						i++;
-					}
-					break;
-			}
-		}
-		secondsToCount *= first_num + frac;
+		parse_reltime(first, part2, format, second, qualifier);
+
 		g_free(first), g_free(part2), g_free(format), g_free(second), g_free(qualifier);
-
-	} else if (g_regex_match(abstime, time_str, 0, &matchinfo)) {
-
-		countdownMode = FALSE;
-
+	}
+	else if (g_regex_match(abstime, time_str, 0, &matchinfo))
+	{
 		gchar *hour    = g_match_info_fetch_named (matchinfo, "Hour");
 		gchar *minute  = g_match_info_fetch_named (matchinfo, "Minute");
 		gchar *seconds = g_match_info_fetch_named (matchinfo, "Second");
 		gchar *ampm    = g_match_info_fetch_named (matchinfo, "AmPm");
-		glong  h       = atol(hour);
 
-		if (h>=24) {
-			g_printerr("provide a valid timeout. see --help\n");
-			exit(EXIT_FAILURE);
-		}
-
-		if (ampm && (ampm[0] == 'P' || ampm[0] == 'p')) // PM
-			h+=12;
-
-		struct tm *end = now_t();
-		end->tm_hour = h;
-
-		if (minute)
-			end->tm_min = atol(minute);
-		else
-			end->tm_min = 0;
-
-		if (seconds)
-			end->tm_sec = atol(seconds);
-		else
-			end->tm_sec = 0;
+		countdownMode = FALSE;
+		parse_abstime(hour, minute, seconds, ampm);
 
 		g_free(hour), g_free(minute), g_free(seconds), g_free(ampm);
-		/* if hour is before now, assume the next day is meant */
-		endtime = mktime(end);
-
-		if (end->tm_yday != now_t()->tm_yday)
-			endtime += 24 * 3600;
 
 	} else {
 		g_printerr("provide a valid timeout. see --help\n");
@@ -437,7 +456,7 @@ static gint galarm_timer(gpointer data)
 		if (end->tm_yday == now_t()->tm_yday)
 			ret = strftime(timeBuffer, sizeof(timeBuffer), " (@%H:%M:%S)", localtime(&endtime));
 		else
-			ret = strftime(timeBuffer, sizeof(timeBuffer), " (@%d.%m. %H:%M:%S)", localtime(&endtime));
+			ret = strftime(timeBuffer, sizeof(timeBuffer), " (@%Y-%m-%d %H:%M:%S)", localtime(&endtime));
 
 		if (ret == 0 || ret >= sizeof(timeBuffer)) {
 			g_printerr("strftime failed or buffer too small\n");
@@ -487,7 +506,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	set_endtime(opt_remaining[0]);
+	parse_endtime(opt_remaining[0]);
 
 	/* the first argument is the timeout value */
 	if (opt_remaining[1] != NULL)
