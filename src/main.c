@@ -3,7 +3,7 @@
  * Oct 2006 - Aug 2007
  *
  * Requires GLIB 2.14 because of Perl-compatible regular expressions
- * Requires GTK+ 2.10 because of GtkStatusIcon
+ * Requires GTK+ 2.12 because of GtkStatusIcon, gtk_tooltip_trigger_tooltip_query()
  */
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -468,6 +468,11 @@ static gint galarm_timer(gpointer data)
 	gtk_status_icon_set_tooltip(icon, buffer->str);
 	g_string_free(buffer, TRUE);
 
+	// update tooltips on all screens
+	GdkDisplay* display = gdk_display_get_default();
+	if (display)
+		gtk_tooltip_trigger_tooltip_query(display); // requires GTK+-2.12
+
 	return FALSE;		/* don't continue */
 }
 
@@ -494,7 +499,10 @@ int main(int argc, char **argv)
 	/* adds GTK+ options */
 	g_option_context_add_group(context, gtk_get_option_group(TRUE));
 	if (g_option_context_parse(context, &argc, &argv, NULL) == FALSE) {
-		g_printerr("%s\n", error->message);
+		if (error != NULL)
+			g_printerr("%s\n", error->message);
+		else
+			g_printerr("unknown options. see --help\n");
 		error = NULL;
 		exit(EXIT_FAILURE);
 	}
@@ -540,6 +548,7 @@ int main(int argc, char **argv)
 	g_signal_connect(G_OBJECT(icon), "popup-menu",
 			G_CALLBACK(statusicon_popup), NULL);
 	gtk_status_icon_set_visible(icon, TRUE);
+	gtk_status_icon_set_tooltip(icon, "galarm");
 
 	prepare_notification();
 	// start the timer loop
