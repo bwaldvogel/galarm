@@ -7,7 +7,8 @@ Options:
 	-c (dont collapse) or something like this
 
 	add option to specify popup-urgency
-	popup_timeout -> float (s)
+
+· when activating the tray icon show a countdown window
 
 · Internationalisation
 	24h/12h format (configurable, dependent on locale)
