@@ -55,7 +55,7 @@ static gchar               *alarm_message     = NULL;
 static gchar                DEFAULT_MESSAGE[] = "alarm";
 
 static gchar               *sound_cmd         = NULL;
-static long                popup_timeout      = 5000;
+static long                popup_timeout      = 0;           /* ms, 0=infinity */
 
 static GError              *error             = NULL;
 static NotifyNotification  *notification      = NULL;
@@ -103,25 +103,24 @@ static void parse_config(void)
 		exit(EXIT_FAILURE);
 	}
 
+	g_assert(error == NULL);
+
 	sound_cmd = g_key_file_get_value(key_file,
 			g_key_file_get_start_group(key_file),
 			"sound_cmd", &error);
 
 	if (sound_cmd == NULL || g_utf8_collate(sound_cmd, "") == 0) {
-		g_printerr("please provide a sound_cmd in the config file.\n");
-		exit(EXIT_FAILURE);
+		quiet = TRUE;
+		error = NULL;
 	}
 
 	gchar *timeout = g_key_file_get_value(key_file,
 			g_key_file_get_start_group(key_file),
 			"popup_timeout", &error);
 
-	if (timeout == NULL || g_utf8_collate(timeout, "") == 0) {
-		g_printerr("please provide a popup_timeout valud in the config file.\n");
-		exit(EXIT_FAILURE);
+	if (timeout != NULL && g_utf8_collate(timeout, "")) {
+		popup_timeout = atof(timeout) * 1000;
 	}
-
-	popup_timeout = atof(timeout) * 1000;
 
 	g_free(filename);
 }
@@ -412,7 +411,6 @@ static gint galarm_timer(gpointer data)
 
 	if (diff_time <= 0)
 	{
-		g_debug("endtime is in past");
 		GString *buffer = g_string_sized_new(50);
 		g_string_printf(buffer, "alarm: %s", alarm_message);
 		gtk_status_icon_set_tooltip(icon, buffer->str);
