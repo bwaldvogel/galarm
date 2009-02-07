@@ -396,7 +396,7 @@ static void statusicon_popup(GtkStatusIcon * status_icon, guint button, guint ac
 }
 
 /* this function is called periodically */
-static gint galarm_timer(gpointer data)
+static gboolean galarm_timer(gpointer data)
 {
 	gdouble diff_time;
 	char    timeBuffer[32];
@@ -418,7 +418,6 @@ static gint galarm_timer(gpointer data)
 		show_alarm(NULL);
 		return FALSE;	/* don't continue */
 	}
-	gtk_timeout_add(1000, galarm_timer, NULL);
 
 	if (diff_time <= BLINK_TRESHOLD) {
 		gtk_status_icon_set_blinking(icon, TRUE);
@@ -471,7 +470,7 @@ static gint galarm_timer(gpointer data)
 	if (display)
 		gtk_tooltip_trigger_tooltip_query(display); // requires GTK+-2.12
 
-	return FALSE;		/* don't continue */
+	return TRUE;		/* continue */
 }
 
 int main(int argc, char **argv)
@@ -550,7 +549,7 @@ int main(int argc, char **argv)
 
 	prepare_notification();
 	// start the timer loop
-	galarm_timer(NULL);
+	g_timeout_add(1000, galarm_timer, NULL);
 	gtk_main();
 
 	return 0;
