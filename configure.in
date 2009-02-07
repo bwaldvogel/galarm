@@ -20,6 +20,8 @@ PKG_CHECK_MODULES(GLIB, glib-2.0 >= 2.14.0,,
 				  AC_MSG_ERROR([GLIB-2.14 is required to compile]))
 PKG_CHECK_MODULES(LIBNOTIFY, libnotify >= 0.3.2,,
 				  AC_MSG_ERROR([libnotify is required to compile]))
+PKG_CHECK_MODULES(LIBCANBERRA, libcanberra >= 0.10,,
+				  AC_MSG_ERROR([libcanberra is required to compile]))
 # export for use in Makefile(.am)
 AC_SUBST(GTK_CFLAGS)
 AC_SUBST(GTK_LIBS)
@@ -29,6 +31,9 @@ AC_SUBST(GLIB_LIBS)
 
 AC_SUBST(LIBNOTIFY_CFLAGS)
 AC_SUBST(LIBNOTIFY_LIBS)
+
+AC_SUBST(LIBCANBERRA_CFLAGS)
+AC_SUBST(LIBCANBERRA_LIBS)
 
 dnl ***********************************
 dnl *** Check for debugging support ***

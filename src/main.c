@@ -22,6 +22,7 @@
 #include <glib.h>        /* 2.14 required */
 #include <glib/gstdio.h> /* g_creat */
 #include <libnotify/notify.h>
+#include <canberra.h>
 
 #ifndef EXIT_SUCCESS
 #  define EXIT_SUCCESS 0
@@ -54,11 +55,12 @@ static GTimer              *timer;
 static gchar               *alarm_message     = NULL;
 static gchar                DEFAULT_MESSAGE[] = "alarm";
 
-static gchar               *sound_cmd         = NULL;
 static long                popup_timeout      = 0;           /* ms, 0=infinity */
 
 static GError              *error             = NULL;
 static NotifyNotification  *notification      = NULL;
+
+static ca_context          *canberra          = NULL;
 
 static GOptionEntry entries[] = {
 	{"daemon", 'd', 0, G_OPTION_ARG_NONE, &daemonize, "start as daemon", NULL},
@@ -77,7 +79,7 @@ static void create_rc(gchar *filename)
 		g_printerr("g_creat failed: %s\n", g_strerror(errno));
 		return;
 	}
-	gchar template[] = "# galarm config\n[Main]\n# sound_cmd=aplay\n# popup_timeout=5.0\n# vim: set ft=config :";
+	gchar template[] = "# galarm config\n[Main]\n# popup_timeout=5.0\n# vim: set ft=config :";
 	if (!g_file_set_contents(filename, template, -1, &error)) {
 		g_assert(error != NULL);
 		g_printerr("%s\n", error->message);
@@ -104,15 +106,6 @@ static void parse_config(void)
 	}
 
 	g_assert(error == NULL);
-
-	sound_cmd = g_key_file_get_value(key_file,
-			g_key_file_get_start_group(key_file),
-			"sound_cmd", &error);
-
-	if (sound_cmd == NULL || g_utf8_collate(sound_cmd, "") == 0) {
-		quiet = TRUE;
-		error = NULL;
-	}
 
 	gchar *timeout = g_key_file_get_value(key_file,
 			g_key_file_get_start_group(key_file),
@@ -290,6 +283,35 @@ static void parse_endtime(const char* time_str)
 	g_regex_unref(abstime);
 }
 
+static void create_canberra() {
+	int ret = ca_context_create(&canberra);
+	if (ret != 0) {
+		g_printerr("create canberra: %s\n", ca_strerror(ret));
+		g_assert(canberra == NULL);
+		quiet = TRUE;
+		return;
+	}
+	g_assert(canberra != NULL);
+
+	ret = ca_context_change_props(canberra,
+			CA_PROP_APPLICATION_NAME, "galarm",
+			NULL);
+	if (ret != 0)
+		g_printerr("canberra, change_props: %s\n", ca_strerror(ret));
+
+	g_debug("created canberra context");
+}
+
+static void destroy_canberra() {
+	if (canberra == NULL) return;
+	int ret = ca_context_destroy(canberra);
+	if (ret != 0) {
+		g_printerr("destroy canberra: %s\n", ca_strerror(ret));
+	}
+	canberra = NULL;
+	g_debug("destroyed canberra context");
+}
+
 static gint quit(gpointer data)
 {
 	if (!notify_notification_close(notification, &error)) {
@@ -297,6 +319,9 @@ static gint quit(gpointer data)
 		error = NULL;
 	}
 	notification = NULL;
+
+	destroy_canberra();
+
 	gtk_main_quit();
 	return FALSE;
 }
@@ -305,19 +330,20 @@ static void interrupt(int a) {
 	quit(0);
 }
 
-static gint play_sound(gpointer data)
+static void play_sound()
 {
-	g_assert(sound_cmd != NULL);
+	g_assert(canberra != NULL);
 
-	char *argv[] = { sound_cmd, "alert.wav", NULL };
-	g_spawn_async(DATADIR "/sounds/galarm", argv, NULL,
-			G_SPAWN_SEARCH_PATH, NULL, NULL, NULL, &error);
-	if (error != NULL) {
-		g_printerr("g_spawn_async: %s\n", error->message);
-		error = NULL;
-		exit(EXIT_FAILURE);
+	// 'galarm-alert' is no offical XDG event
+	// it is installed with galarm and might be replaced with
+	// 'alarm-clock-elapsed' as soon as the first sound themes ship it
+	int ret = ca_context_play(canberra, 0,
+			CA_PROP_EVENT_ID, "galarm-alert",
+			NULL);
+
+	if (ret != 0) {
+		g_printerr("canberra: %s\n", ca_strerror(ret));
 	}
-	return FALSE;		/* don't continue */
 }
 
 static gint pause_resume(gpointer data)
@@ -350,6 +376,9 @@ static void prepare_notification (void)
 	}
 	notify_notification_set_urgency (notification, NOTIFY_URGENCY_CRITICAL);
 	notify_notification_set_timeout(notification, popup_timeout);
+
+	/* canberra */
+	create_canberra();
 }
 
 static gint show_alarm(gpointer data)
@@ -359,7 +388,7 @@ static gint show_alarm(gpointer data)
 		error = NULL;
 	}
 	if (!quiet)
-		gtk_idle_add(play_sound, NULL);
+		play_sound();
 
 	return FALSE;
 }

@@ -1,7 +1,6 @@
 EXTRA_DIST = \
-                alert.wav \
-                alert.ogg
+                galarm-alert.ogg
 
-soundsdir =     $(datadir)/sounds/galarm
+soundsdir =     $(datadir)/sounds
 sounds_DATA =   $(EXTRA_DIST)
 

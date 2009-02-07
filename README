@@ -1,1 +1,5 @@
 galarm - a tool to popup an alarm message and play a sound after a given time
+
+== Implementation notes ==
+it utilized libnotify for the popup message,
+and libcanberra to play the event sound.

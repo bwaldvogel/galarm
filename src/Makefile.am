@@ -8,7 +8,7 @@ AM_CFLAGS = $(PLATFORM_CFLAGS) -DDATADIR=\"$(datadir)\"
 
 bin_PROGRAMS = galarm
 galarm_SOURCES = main.c
-galarm_LDADD = @GTK_LIBS@ @GLIB_LIBS@ -lnotify
+galarm_LDADD = @GTK_LIBS@ @GLIB_LIBS@ -lnotify -lcanberra
 
 # install symlink
 install-data-local:
