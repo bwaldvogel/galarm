@@ -31,6 +31,16 @@
 #  define EXIT_FAILURE 1
 #endif
 
+#ifndef DEBUG
+#  undef g_debug
+#  define g_debug(...)
+#endif
+
+/* http://stackoverflow.com/questions/285591/using-the-gcc-unused-attribute-with-objective-c/285785#285785 */
+#ifndef UNUSED
+#  define UNUSED(x) (void)x
+#endif
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 /* globals */
@@ -316,6 +326,7 @@ static void destroy_canberra() {
 
 static gint quit(gpointer data)
 {
+    UNUSED(data);
     if (!notify_notification_close(notification, &error)) {
         g_printerr("notify_notification_close: %s\n", error->message);
         error = NULL;
@@ -329,6 +340,7 @@ static gint quit(gpointer data)
 }
 
 static void interrupt(int a) {
+    UNUSED(a);
     quit(0);
 }
 
@@ -350,6 +362,7 @@ static void play_sound()
 
 static gint pause_resume(gpointer data)
 {
+    UNUSED(data);
     if (timer_paused) {
         g_timer_continue(timer);
     } else {
@@ -385,6 +398,7 @@ static void prepare_notification (void)
 
 static gint show_alarm(gpointer data)
 {
+    UNUSED(data);
     if (!notify_notification_show (notification, &error)) {
         g_printerr("notify_notification_show: %s\n", error->message);
         error = NULL;
@@ -397,10 +411,14 @@ static gint show_alarm(gpointer data)
 
 static void statusicon_activate(GtkStatusIcon * icon, gpointer data)
 {
+    UNUSED(icon);
+    UNUSED(data);
 }
 
 static void statusicon_popup(GtkStatusIcon * status_icon, guint button, guint activate_time, gpointer user_data)
 {
+    UNUSED(status_icon);
+    UNUSED(user_data);
 
     /*** CREATE A MENU ***/
     GtkWidget *menu = gtk_menu_new();
@@ -431,6 +449,8 @@ static void statusicon_popup(GtkStatusIcon * status_icon, guint button, guint ac
 /* this function is called periodically */
 static gboolean galarm_timer(gpointer data)
 {
+    UNUSED(data);
+
     gdouble diff_time;
     char    timeBuffer[32];
     size_t  ret;
