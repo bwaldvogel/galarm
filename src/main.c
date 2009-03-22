@@ -1,13 +1,12 @@
 /*
  * written by Benedikt Waldvogel, bene /at/ 0x11.net
- * Oct 2006 - Aug 2007
+ * Oct 2006 - Mar 2009
  *
  * Requires GLIB 2.14 because of Perl-compatible regular expressions
  * Requires GTK+ 2.12 because of GtkStatusIcon, gtk_tooltip_trigger_tooltip_query()
  */
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif
+
+#include "config.h"
 
 #include <unistd.h>      /* fork, chdir */
 #include <stdlib.h>      /* exit */
@@ -18,7 +17,7 @@
 #include <time.h>        /* localtime, time, gmtime */
 #include <fcntl.h>       /* creat - g_creat needs it! (?) */
 
-#include <gtk/gtk.h>     /* 2.10 required */
+#include <gtk/gtk.h>     /* 2.12 required */
 #include <glib.h>        /* 2.14 required */
 #include <glib/gstdio.h> /* g_creat */
 #include <libnotify/notify.h>
