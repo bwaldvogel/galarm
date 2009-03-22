@@ -21,7 +21,10 @@
 #include <glib.h>        /* 2.14 required */
 #include <glib/gstdio.h> /* g_creat */
 #include <libnotify/notify.h>
-#include <canberra.h>
+
+#ifdef HAVE_CANBERRA
+#  include <canberra.h>
+#endif
 
 #ifndef EXIT_SUCCESS
 #  define EXIT_SUCCESS 0
@@ -69,7 +72,9 @@ static long                popup_timeout      = 0;           /* ms, 0=infinity *
 static GError              *error             = NULL;
 static NotifyNotification  *notification      = NULL;
 
+#ifdef HAVE_CANBERRA
 static ca_context          *canberra          = NULL;
+#endif
 
 static GOptionEntry entries[] = {
     {"daemon", 'd', 0, G_OPTION_ARG_NONE, &daemonize, "start as daemon", NULL},
@@ -294,6 +299,7 @@ static void parse_endtime(const char* time_str)
 }
 
 static void create_canberra() {
+#ifdef HAVE_CANBERRA
     int ret = ca_context_create(&canberra);
     if (ret != 0) {
         g_printerr("create canberra: %s\n", ca_strerror(ret));
@@ -310,9 +316,11 @@ static void create_canberra() {
         g_printerr("canberra, change_props: %s\n", ca_strerror(ret));
 
     g_debug("created canberra context");
+#endif
 }
 
 static void destroy_canberra() {
+#ifdef HAVE_CANBERRA
     if (canberra == NULL) return;
     int ret = ca_context_destroy(canberra);
     if (ret != 0) {
@@ -321,6 +329,7 @@ static void destroy_canberra() {
     canberra = NULL;
 
     g_debug("destroyed canberra context");
+#endif
 }
 
 static gint quit(gpointer data)
@@ -345,6 +354,7 @@ static void interrupt(int a) {
 
 static void play_sound()
 {
+#ifdef HAVE_CANBERRA
     g_assert(canberra != NULL);
 
     // 'galarm-alert' is no offical XDG event
@@ -357,6 +367,7 @@ static void play_sound()
     if (ret != 0) {
         g_printerr("canberra: %s\n", ca_strerror(ret));
     }
+#endif
 }
 
 static gint pause_resume(gpointer data)
@@ -391,7 +402,6 @@ static void prepare_notification (void)
     notify_notification_set_urgency (notification, NOTIFY_URGENCY_CRITICAL);
     notify_notification_set_timeout(notification, popup_timeout);
 
-    /* canberra */
     create_canberra();
 }
 
@@ -402,6 +412,7 @@ static gint show_alarm(gpointer data)
         g_printerr("notify_notification_show: %s\n", error->message);
         error = NULL;
     }
+
     if (!quiet)
         play_sound();
 
