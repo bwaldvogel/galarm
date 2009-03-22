@@ -7,11 +7,11 @@ cmake_minimum_required(VERSION 2.4.6)
 
 set(APPLICATION_NAME ${PROJECT_NAME})
 
-set(APPLICATION_VERSION "0.3.5")
+set(APPLICATION_VERSION "0.3.6")
 
 set(APPLICATION_VERSION_MAJOR "0")
 set(APPLICATION_VERSION_MINOR "3")
-set(APPLICATION_VERSION_PATCH "5")
+set(APPLICATION_VERSION_PATCH "6")
 
 # where to look first for cmake modules, before ${CMAKE_ROOT}/Modules/ is checked
 set(CMAKE_MODULE_PATH
