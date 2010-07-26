@@ -467,6 +467,7 @@ static gboolean galarm_timer(gpointer data)
 
     if (countdownMode) {
         gdouble elapsed = g_timer_elapsed(timer, NULL);
+        g_assert(elapsed >= 0);
         diff_time = secondsToCount - elapsed;
     } else {
         diff_time = endtime - now();
@@ -538,6 +539,9 @@ static gboolean galarm_timer(gpointer data)
 
 int main(int argc, char **argv)
 {
+    // the g_timer_elapsed() returns a strange (negative) value unless doing the init
+    // see http://library.gnome.org/devel/glib/stable/glib-Timers.html#glib-Timers.description
+    g_thread_init(NULL);
 
     signal(SIGINT, interrupt);
 
