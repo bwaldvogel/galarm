@@ -390,7 +390,7 @@ static void prepare_notification (void)
         exit(EXIT_FAILURE);
     }
 
-    notification = notify_notification_new ("Alarm", alarm_message, NULL, NULL);
+    notification = notify_notification_new ("Alarm", alarm_message, NULL);
     g_signal_connect (notification, "closed", G_CALLBACK(quit), NULL);
     GdkPixbuf *icon = gdk_pixbuf_new_from_file(SHARE_INSTALL_PREFIX "/pixmaps/galarm.png", &error);
     if (icon == NULL) {
