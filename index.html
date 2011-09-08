@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+	<head>
+		<title>0x11.net / galarm</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="robots" content="index, follow" />
+		<link href="favicon.ico" rel="shortcut icon" />
+		<link rel="start" href="/" title="Startseite" />
+		<link rel="stylesheet" type="text/css" href="/style.css" title="0x11.net style" />
+		<style type="text/css">
+		</style>
+	</head>
+
+	<body class="left">
+		<img src="banner.png" alt="galarm" title="galarm" /><br />
+		<p>Galarm is a tool to popup an alarm message (using <a href="http://www.galago-project.org/">libnotify</a>) after a given time.<br/>
+		The program is intended to run on all Unices, but is tested on GNU/Linux only.<br/>
+		The license is GPL-2.</p>
+
+		<h2>Description</h2>
+
+		<p>The main design goal was to create a <em>small</em> and
+		<em>fast starting</em> CLI tool which doesn't require any
+		configuration.<br/> Instead you just start the tool with
+		<strong>as few characters as possible</strong>.</p>
+
+		<h3>Usage Examples</h3>
+		<p><em>popup after 5 minutes</em>:
+		<pre># ga 5</pre>
+
+		<p>…or with a message:</p>
+		<pre># ga 5m tea is ready</pre>
+
+		<p>…or at a fixed time:</p>
+		<pre># ga @12 dont forget the call</pre>
+
+		<p>You can also <strong>pause/resume</strong> or <strong>cancel</strong> the alarms.</p>
+
+		<h2>Dependencies</h2>
+		galarm requires the following libraries:
+		<ul>
+			<li>GTK+ 2.12 or higher</li>
+			<li>GLIB 2.14 or higher</li>
+			<li><a href="http://www.galago-project.org/">libnotify</a> 0.3.2 or higher to trigger the notification popup</li>
+			<li><em>Optional: </em><a href="http://0pointer.de/lennart/projects/libcanberra/">libcanberra</a> 0.10 or higher for the event sound</li>
+		</ul>
+		<p>…and of course <strong>a running notification-daemon</strong><a href="#footnote1"><sup>1</sup></a> to show popups</p>
+		<h2>Screenshots</h2>
+		<img style="margin: 10px;" src="screenshot1.png" alt="notification window of xfce4-notifyd" title="notification window of xfce4-notifyd" />
+		<img style="margin: 10px;" src="screenshot2.png" alt="statusicon tooltip" title="statusicon tooltip" />
+		<img style="margin: 10px;" src="screenshot3.png" alt="menu of statusicon" title="menu of statusicon" />
+
+		<h2>Development &amp; Bug reports</h2>
+		<p>galarm is <a href="http://github.com/bwaldvogel/galarm/">hosted on github</a>.</p>
+
+		<pre># git clone git://github.com/bwaldvogel/galarm.git</pre>
+
+		<hr class="footnote_sep"/>
+		<p class="footnote" id="footnote1"><sup>1</sup> KNotify for KDE; <a href="http://spuriousinterrupt.org/projects/xfce4-notifyd">xfce4-notify</a> (recommended) or <a href="http://http://goodies.xfce.org/projects/applications/notification-daemon-xfce">notification-daemon-xfce</a> for Xfce</p>
+
+	</body>
+</html>
+<!-- vim: set spell spelllang=en : -->
