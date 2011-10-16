@@ -474,7 +474,7 @@ static gboolean galarm_timer(gpointer data)
     {
         GString *buffer = g_string_sized_new(50);
         g_string_printf(buffer, "alarm: %s", alarm_message);
-        gtk_status_icon_set_tooltip(icon, buffer->str);
+        gtk_status_icon_set_tooltip_text(icon, buffer->str);
         g_string_free(buffer, TRUE);
         show_alarm(NULL);
         return FALSE;   /* don't continue */
@@ -523,7 +523,7 @@ static gboolean galarm_timer(gpointer data)
         g_string_append_printf(buffer, "%s", timeBuffer);
     }
 
-    gtk_status_icon_set_tooltip(icon, buffer->str);
+    gtk_status_icon_set_tooltip_text(icon, buffer->str);
     g_string_free(buffer, TRUE);
 
     // update tooltips on all screens
@@ -609,7 +609,7 @@ int main(int argc, char **argv)
     g_signal_connect(G_OBJECT(icon), "popup-menu",
             G_CALLBACK(statusicon_popup), NULL);
     gtk_status_icon_set_visible(icon, TRUE);
-    gtk_status_icon_set_tooltip(icon, "galarm");
+    gtk_status_icon_set_tooltip_text(icon, "galarm");
 
     prepare_notification();
     // start the timer loop
