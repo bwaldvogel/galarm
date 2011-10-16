@@ -393,7 +393,28 @@ static void prepare_notification (void)
         exit(EXIT_FAILURE);
     }
 
-    notification = notify_notification_new ("Alarm", alarm_message, NULL);
+    GRegex *weblink = g_regex_new("(ftp|https?)://([^ ]+)(\\.)?\\b", G_REGEX_CASELESS | G_REGEX_OPTIMIZE, 0, &error);
+    if (weblink == NULL) {
+        g_printerr("g_regex_new: %s\n", error->message);
+        error = NULL;
+        exit(EXIT_FAILURE);
+    }
+
+    alarm_message = g_regex_replace(weblink, alarm_message, -1, 0, "<a href='\\0'>\\0</a>", 0, &error);
+
+    g_regex_unref(weblink);
+
+    if (alarm_message == NULL) {
+        g_printerr("g_regex_replace: %s\n", error->message);
+        error = NULL;
+        exit(EXIT_FAILURE);
+    }
+
+    GString *buffer = g_string_sized_new(512);
+    g_string_printf(buffer, "<b>%s</b>", alarm_message);
+    notification = notify_notification_new ("Alarm", buffer->str, NULL);
+    g_string_free(buffer, TRUE);
+
     g_signal_connect (notification, "closed", G_CALLBACK(quit), NULL);
     GdkPixbuf *icon = gdk_pixbuf_new_from_file(SHARE_INSTALL_PREFIX "/pixmaps/galarm.png", &error);
     if (icon == NULL) {
