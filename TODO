@@ -17,3 +17,5 @@ Options:
 
 · option to just count the time while beeing "online" so the time during
   suspend-to-ram eg. isn't counted
+
+· http://blog.habets.pp.se/2010/09/gettimeofday-should-never-be-used-to-measure-time
