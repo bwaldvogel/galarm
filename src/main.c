@@ -1,9 +1,6 @@
 /*
  * written by Benedikt Waldvogel, bene /at/ 0x11.net
- * Oct 2006 - Mar 2009
- *
- * Requires GLIB 2.14 because of Perl-compatible regular expressions
- * Requires GTK+ 2.12 because of GtkStatusIcon, gtk_tooltip_trigger_tooltip_query()
+ * 2006 - 2011
  */
 
 #include "config.h"
