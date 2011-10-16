@@ -473,8 +473,8 @@ static gboolean galarm_timer(gpointer data)
     if (diff_time <= 0)
     {
         GString *buffer = g_string_sized_new(50);
-        g_string_printf(buffer, "alarm: %s", alarm_message);
-        gtk_status_icon_set_tooltip_text(icon, buffer->str);
+        g_string_printf(buffer, "alarm: <b>%s</b>", alarm_message);
+        gtk_status_icon_set_tooltip_markup(icon, buffer->str);
         g_string_free(buffer, TRUE);
         show_alarm(NULL);
         return FALSE;   /* don't continue */
@@ -485,7 +485,7 @@ static gboolean galarm_timer(gpointer data)
     }
 
     GString *buffer = g_string_sized_new(50);
-    g_string_append_printf(buffer, "%s: ", alarm_message);
+    g_string_append_printf(buffer, "<b>%s</b>: ", alarm_message);
 
     time_t tt = labs(diff_time);
     ret = strftime(timeBuffer, sizeof(timeBuffer), "%H:%M:%S", gmtime(&tt));
@@ -499,7 +499,12 @@ static gboolean galarm_timer(gpointer data)
         int days = diff_time/(24*3600.0);
         g_string_append_printf(buffer, "%d day%s %s", days, (days>1)?"s":"", timeBuffer);
     } else {
-        g_string_append_printf(buffer, "%s", timeBuffer);
+        /* make the diff RED */
+        if (diff_time < BLINK_TRESHOLD) {
+            g_string_append_printf(buffer, "<span weight='bold' color='red'>%s</span>", timeBuffer);
+        } else {
+            g_string_append_printf(buffer, "%s", timeBuffer);
+        }
     }
 
     if (timer_paused) {
@@ -512,9 +517,9 @@ static gboolean galarm_timer(gpointer data)
         struct tm* end = localtime(&endtime);
 
         if (end->tm_yday == now_t()->tm_yday)
-            ret = strftime(timeBuffer, sizeof(timeBuffer), " (@%H:%M:%S)", localtime(&endtime));
+            ret = strftime(timeBuffer, sizeof(timeBuffer), " <i>(@%H:%M:%S)</i>", localtime(&endtime));
         else
-            ret = strftime(timeBuffer, sizeof(timeBuffer), " (@%Y-%m-%d %H:%M:%S)", localtime(&endtime));
+            ret = strftime(timeBuffer, sizeof(timeBuffer), " <i>(@%Y-%m-%d %H:%M:%S)</i>", localtime(&endtime));
 
         if (ret == 0 || ret >= sizeof(timeBuffer)) {
             g_printerr("strftime failed or buffer too small\n");
@@ -523,7 +528,7 @@ static gboolean galarm_timer(gpointer data)
         g_string_append_printf(buffer, "%s", timeBuffer);
     }
 
-    gtk_status_icon_set_tooltip_text(icon, buffer->str);
+    gtk_status_icon_set_tooltip_markup(icon, buffer->str);
     g_string_free(buffer, TRUE);
 
     // update tooltips on all screens
