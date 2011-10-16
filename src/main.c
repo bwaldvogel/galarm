@@ -472,7 +472,7 @@ static gboolean galarm_timer(gpointer data)
 
     if (diff_time <= 0)
     {
-        GString *buffer = g_string_sized_new(50);
+        GString *buffer = g_string_sized_new(512);
         g_string_printf(buffer, "alarm: <b>%s</b>", alarm_message);
         gtk_status_icon_set_tooltip_markup(icon, buffer->str);
         g_string_free(buffer, TRUE);
