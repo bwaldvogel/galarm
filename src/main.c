@@ -3,7 +3,13 @@
  * 2006 - 2011
  */
 
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#else
+#define APPLICATION_NAME     "galarm"
+#define APPLICATION_VERSION  "dev"
+#define SHARE_INSTALL_PREFIX "/usr/local/share"
+#endif
 
 #include <unistd.h>      /* fork, chdir */
 #include <stdlib.h>      /* exit */
