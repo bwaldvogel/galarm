@@ -569,6 +569,7 @@ static gboolean galarm_timer(gpointer data)
 
 int main(int argc, char **argv)
 {
+    g_set_prgname(APPLICATION_NAME);
     // the g_timer_elapsed() returns a strange (negative) value unless doing the init
     // see http://library.gnome.org/devel/glib/stable/glib-Timers.html#glib-Timers.description
     g_thread_init(NULL);
@@ -592,7 +593,7 @@ int main(int argc, char **argv)
 
     /* adds GTK+ options */
     g_option_context_add_group(context, gtk_get_option_group(TRUE));
-    if (g_option_context_parse(context, &argc, &argv, NULL) == FALSE) {
+    if (g_option_context_parse(context, &argc, &argv, &error) == FALSE) {
         if (error != NULL)
             g_printerr("%s\n", error->message);
         else
