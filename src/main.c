@@ -55,6 +55,7 @@ static const guint          BLINK_TRESHOLD    = 10;
 static gboolean             daemonize         = FALSE;
 static gboolean             quiet             = FALSE;
 static gboolean             verbose           = FALSE;
+static gboolean             version           = FALSE;
 /* static gboolean             stopall           = FALSE; */
 static gchar              **opt_remaining     = NULL;
 
@@ -82,7 +83,8 @@ static ca_context          *canberra          = NULL;
 static GOptionEntry entries[] = {
     {"daemon", 'd', 0, G_OPTION_ARG_NONE, &daemonize, "start as daemon", NULL},
     {"quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet, "do not play sounds", NULL},
-    {"verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Be verbose", NULL},
+    {"verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "be verbose", NULL},
+    {"version", 0, 0, G_OPTION_ARG_NONE, &version, "print application version and exit", NULL},
     /* {"stopall", 0, 0, G_OPTION_ARG_NONE, &stopall, "Stop all running galarm instances", NULL}, */
     /* {"stop-all", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &stopall, NULL, NULL}, */
     {G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_remaining, "Message to display", "TIMEOUT [MESSAGE]"},
@@ -603,6 +605,11 @@ int main(int argc, char **argv)
     }
 
     g_option_context_free(context);
+
+    if (version) {
+        g_printf("%s version %s\n", APPLICATION_NAME, APPLICATION_VERSION);
+        exit(0);
+    }
 
     if (opt_remaining == NULL || opt_remaining[0] == NULL) {
         g_printerr("provide a valid timeout. see --help\n");
