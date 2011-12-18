@@ -58,7 +58,4 @@ require_include_file(signal.h)
 require_include_file(time.h)
 require_include_file(fcntl.h)
 
-# ln -s /usr/bin/galarm /usr/bin/ga
-install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink \"${BIN_INSTALL_DIR}/galarm\" \"${BIN_INSTALL_DIR}/ga\" )" )
-
 # vim: set ts=4 sw=4 et:
