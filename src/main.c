@@ -88,7 +88,7 @@ static GOptionEntry entries[] = {
     /* {"stopall", 0, 0, G_OPTION_ARG_NONE, &stopall, "Stop all running galarm instances", NULL}, */
     /* {"stop-all", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &stopall, NULL, NULL}, */
     {G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_remaining, "Message to display", "TIMEOUT [MESSAGE]"},
-    NULL
+    {0, 0, 0, 0, 0, 0, 0}
 };
 
 static void create_rc(gchar *filename)
