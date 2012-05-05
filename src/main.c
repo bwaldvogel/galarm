@@ -134,6 +134,7 @@ static void parse_config(void)
 
     if (timeout != NULL && g_utf8_collate(timeout, "")) {
         popup_timeout = atof(timeout) * 1000;
+        g_debug("popup timeout configured to %ld", popup_timeout);
     }
 
     g_free(filename);
