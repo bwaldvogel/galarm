@@ -49,6 +49,11 @@ install(
   RUNTIME DESTINATION bin
 )
 
+if(CMAKE_HOST_UNIX)
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
+    galarm \"\$ENV{DESTDIR}${BIN_INSTALL_DIR}/ga\" )" )
+endif(CMAKE_HOST_UNIX)
+
 require_include_file(unistd.h)
 require_include_file(stdlib.h)
 require_include_file(math.h)
