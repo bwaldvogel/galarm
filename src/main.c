@@ -71,7 +71,7 @@ static GTimer              *timer;
 static gchar               *alarm_message     = NULL;
 static gchar                DEFAULT_MESSAGE[] = "alarm";
 
-static long                popup_timeout      = 0;           /* ms, 0=infinity */
+static long                popup_timeout      = NOTIFY_EXPIRES_NEVER;
 
 static GError              *error             = NULL;
 static NotifyNotification  *notification      = NULL;
@@ -608,7 +608,7 @@ int main(int argc, char **argv)
 
     if (version) {
         g_printf("%s version %s\n", APPLICATION_NAME, APPLICATION_VERSION);
-        exit(0);
+        exit(EXIT_SUCCESS);
     }
 
     if (opt_remaining == NULL || opt_remaining[0] == NULL) {
