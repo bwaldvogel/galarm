@@ -427,7 +427,7 @@ static void prepare_notification (void)
     } else {
         notify_notification_set_icon_from_pixbuf(notification, icon);
     }
-    notify_notification_set_urgency (notification, NOTIFY_URGENCY_CRITICAL);
+    notify_notification_set_urgency(notification, NOTIFY_URGENCY_NORMAL);
     notify_notification_set_timeout(notification, popup_timeout);
 
     create_canberra();
