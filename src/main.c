@@ -574,9 +574,6 @@ static gboolean galarm_timer(gpointer data)
 int main(int argc, char **argv)
 {
     g_set_prgname(APPLICATION_NAME);
-    // the g_timer_elapsed() returns a strange (negative) value unless doing the init
-    // see http://library.gnome.org/devel/glib/stable/glib-Timers.html#glib-Timers.description
-    g_thread_init(NULL);
 
     signal(SIGINT, interrupt);
 
