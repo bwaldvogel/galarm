@@ -5,6 +5,13 @@ galarm
 
 GTK tool to popup an alarm message and play a sound after a configurable time
 
+Screenshots
+-----------
+
+![screenshot 1][screenshot1]
+![screenshot 2][screenshot2]
+![screenshot 3][screenshot3]
+
 Dependencies
 ------------
 
@@ -35,6 +42,10 @@ TODOs
   suspend-to-ram eg. isn't counted
 
 - avoid [gettimeofday()][3]
+
+[screenshot1]: http://galarm.0x11.net/screenshot1.png
+[screenshot2]: http://galarm.0x11.net/screenshot2.png
+[screenshot3]: http://galarm.0x11.net/screenshot3.png
 
 [1]: http://developer.gnome.org/libnotify/
 [2]: http://0pointer.de/lennart/projects/libcanberra/
