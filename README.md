@@ -5,6 +5,30 @@ galarm
 
 GTK tool to popup an alarm message and play a sound after a configurable time
 
+Description
+-----------
+
+The main design goal was to create a *small* and *fast* starting CLI tool which
+doesn't require any configuration. Instead you just start the tool with as **few
+characters as possible**.
+
+Usage
+-----
+
+popup after 5 minutes:
+
+	# ga 5
+
+…with a message:
+
+	# ga 5m tea is ready
+
+…at a fixed time:
+
+	# ga @12 dont forget the call
+
+You can also pause/resume or cancel the alarms.
+
 Screenshots
 -----------
 
