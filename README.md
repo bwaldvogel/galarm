@@ -39,9 +39,12 @@ Screenshots
 Dependencies
 ------------
 
-- [libnotify][1] for the popup message
-- [libcanberra][2] to play the event sound
+- GTK+ 2.12 or higher
+- GLIB 2.14 or higher
+- [libnotify][libnotify] 0.3.2 or higher to trigger the notification popup
+- Optional: [libcanberra][libcanberra] 0.10 or higher for the event sound
 
+…and a running **notification-daemon** to show popups
 
 TODOs
 -----
@@ -65,12 +68,14 @@ TODOs
 - option to just count the time while beeing "online" so the time during
   suspend-to-ram eg. isn't counted
 
-- avoid [gettimeofday()][3]
+- avoid [gettimeofday()][gettimeofday]
+
 
 [screenshot1]: http://galarm.0x11.net/screenshot1.png
 [screenshot2]: http://galarm.0x11.net/screenshot2.png
 [screenshot3]: http://galarm.0x11.net/screenshot3.png
 
-[1]: http://developer.gnome.org/libnotify/
-[2]: http://0pointer.de/lennart/projects/libcanberra/
-[3]: http://blog.habets.pp.se/2010/09/gettimeofday-should-never-be-used-to-measure-time
+[libnotify]: http://developer.gnome.org/libnotify/
+[libcanberra]: http://0pointer.de/lennart/projects/libcanberra/
+
+[gettimeofday]: http://blog.habets.pp.se/2010/09/gettimeofday-should-never-be-used-to-measure-time
