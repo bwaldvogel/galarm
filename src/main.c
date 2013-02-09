@@ -204,6 +204,10 @@ static void parse_reltime(gchar *first, gchar *part2, gchar *format,
         }
     }
     secondsToCount *= first_num + frac;
+
+    if (verbose) {
+        g_print("alarm in %.0lf seconds\n", secondsToCount);
+    }
 }
 
 static void parse_abstime(gchar *hour, gchar *minute, gchar *seconds,
@@ -237,6 +241,12 @@ static void parse_abstime(gchar *hour, gchar *minute, gchar *seconds,
     /* if end is before now, assume the next day is meant */
     if (endtime < now())
         endtime += 24 * 3600;
+
+    if (verbose) {
+        char timeBuffer[32];
+        strftime(timeBuffer, sizeof(timeBuffer), "alarm at %H:%M:%S", localtime(&endtime));
+        g_print("%s\n", timeBuffer);
+    }
 }
 
 static void parse_endtime(const char* time_str)
