@@ -4,19 +4,14 @@ compiler:
     - gcc
 
 env:
-    - BUILD_OPTIONS="-DCMAKE_BUILD_TYPE=Release"
-    - BUILD_DEPENDENCIES="cmake"
-    - DEPENDENCIES="libgtk2.0-dev libglib2.0-dev"
-    - OPTIONAL_DEPENDENCIES="libnotify-dev libcanberra-dev"
+    - OPTIONS="-DCMAKE_BUILD_TYPE=Release"
 
 # Make sure CMake is installed
 install:
     - sudo apt-get update >/dev/null
-    - sudo apt-get -q install $BUILD_DEPENDENCIES
-    - sudo apt-get -q install $DEPENDENCIES
-    - sudo apt-get -q install $OPTIONAL_DEPENDENCIES
+    - sudo apt-get -q install cmake libgtk2.0-dev libglib2.0-dev libnotify-dev libcanberra-dev
 
 script:
     - cd build
-    - cmake .. -DCMAKE_INSTALL_PREFIX=../_install $BUILD_OPTIONS
+    - cmake .. -DCMAKE_INSTALL_PREFIX=../_install $OPTIONS
     - cmake --build . --target install
