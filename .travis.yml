@@ -2,6 +2,7 @@ language: c
 
 compiler:
     - gcc
+    - clang
 
 env:
     - OPTIONS="-DCMAKE_BUILD_TYPE=Release"
