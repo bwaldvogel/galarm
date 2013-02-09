@@ -216,8 +216,6 @@ static void parse_abstime(gchar *hour, gchar *minute, gchar *seconds,
         exit(EXIT_FAILURE);
     }
 
-    g_debug("fixedend");
-
     if (ampm && (ampm[0] == 'P' || ampm[0] == 'p')) // PM
         h+=12;
 
