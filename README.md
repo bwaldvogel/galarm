@@ -12,5 +12,30 @@ Dependencies
 - [libcanberra][2] to play the event sound
 
 
+TODOs
+-----
+
+### Options:
+
+	- stopall (stop ALL timers)
+	- pauseall (pause ALL timers)
+	- resumeall …
+
+- recognize several running timers → collapse them
+	- -c (dont collapse) or something like this
+
+- add option to specify popup-urgency
+
+- when activating the tray icon show a countdown window
+
+- Internationalisation
+	- 24h/12h format (configurable, dependent on locale)
+
+- option to just count the time while beeing "online" so the time during
+  suspend-to-ram eg. isn't counted
+
+- avoid [gettimeofday()][3]
+
 [1]: http://developer.gnome.org/libnotify/
 [2]: http://0pointer.de/lennart/projects/libcanberra/
+[3]: http://blog.habets.pp.se/2010/09/gettimeofday-should-never-be-used-to-measure-time
