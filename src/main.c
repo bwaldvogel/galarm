@@ -510,10 +510,6 @@ static gboolean galarm_timer(gpointer data)
         return FALSE;   /* don't continue */
     }
 
-    if (diff_time <= BLINK_TRESHOLD) {
-        gtk_status_icon_set_blinking(icon, TRUE);
-    }
-
     GString *buffer = g_string_sized_new(50);
     g_string_append_printf(buffer, "<b>%s</b>: ", alarm_message);
 
