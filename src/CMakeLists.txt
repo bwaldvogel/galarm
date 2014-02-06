@@ -25,6 +25,7 @@ include_directories(${GLIB2_INCLUDE_DIRS})
 include_directories(${GTK_INCLUDE_DIRS})
 include_directories(${LIBNOTIFY_INCLUDE_DIRS})
 
+target_link_libraries(galarm m)
 target_link_libraries(galarm ${GLIB2_LIBRARIES})
 target_link_libraries(galarm ${GTK_LIBRARIES})
 target_link_libraries(galarm ${LIBNOTIFY_LIBRARIES})
