@@ -68,7 +68,7 @@ TODOs
 - option to just count the time while beeing "online" so the time during
   suspend-to-ram eg. isn't counted
 
-- avoid [gettimeofday()][gettimeofday]
+- [avoid gettimeofday()][gettimeofday]
 
 
 [screenshot1]: http://galarm.0x11.net/screenshot1.png
