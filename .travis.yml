@@ -5,6 +5,8 @@ compiler:
     - clang
 
 env:
+    - OPTIONS="-DCMAKE_BUILD_TYPE=Debug"
+    - OPTIONS="-DCMAKE_BUILD_TYPE=MinSizeRel"
     - OPTIONS="-DCMAKE_BUILD_TYPE=Release"
 
 # Make sure CMake is installed
