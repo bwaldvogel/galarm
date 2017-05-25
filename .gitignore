@@ -15,3 +15,5 @@ tags
 
 build/*
 !build/.keep
+
+_install/
