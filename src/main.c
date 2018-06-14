@@ -13,7 +13,7 @@
 
 #include <unistd.h>      /* fork, chdir */
 #include <stdlib.h>      /* exit */
-#include <math.h>        /* HUGE_VAL */
+#include <math.h>        /* fabs */
 #include <sys/stat.h>    /* umask */
 #include <errno.h>
 #include <signal.h>
@@ -516,7 +516,7 @@ static gboolean galarm_timer(gpointer data)
     GString *buffer = g_string_sized_new(50);
     g_string_append_printf(buffer, "<b>%s</b>: ", alarm_message);
 
-    time_t tt = labs(diff_time);
+    time_t tt = fabs(diff_time);
     ret = strftime(timeBuffer, sizeof(timeBuffer), "%H:%M:%S", gmtime(&tt));
     if (ret == 0 || ret >= sizeof(timeBuffer)) {
         g_printerr("strftime failed or buffer too small\n");
