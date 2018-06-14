@@ -1,6 +1,6 @@
 /*
  * written by Benedikt Waldvogel, bene /at/ 0x11.net
- * 2006 - 2011
+ * 2006 - 2018
  */
 
 #ifdef HAVE_CONFIG_H
@@ -153,25 +153,24 @@ static struct tm* now_t(void)
 static void parse_reltime(gchar *first, gchar *part2, gchar *format,
         gchar *second, gchar *qualifier)
 {
-    glong  first_num  = atol(first);
-    glong  second_num = 0;
-    // days, hours, minutes and seconds
-    // default is minutes
-    switch (qualifier[0]) {
-        case 'd':
-            secondsToCount = 24*3600;
-            break;
-        case 'h':
-            secondsToCount = 3600;
-            break;
-        case 's':
-            secondsToCount = 1;
-            break;
-        case 'm':
-        case '\0':
-        default:
-            secondsToCount = 60;
-            break;
+    glong first_num  = atol(first);
+    glong second_num = 0;
+
+    // days, hours, minutes (default) and seconds
+    if (g_strcmp0(qualifier, "d") == 0) {
+        secondsToCount = 24 * 3600;
+    } else if (g_strcmp0(qualifier, "h") == 0) {
+        secondsToCount = 3600;
+    } else if (g_strcmp0(qualifier, "m") == 0
+            || g_strcmp0(qualifier, "min") == 0
+            || g_strcmp0(qualifier, "") == 0) {
+        secondsToCount = 60;
+    } else if (g_strcmp0(qualifier, "s") == 0
+            || g_strcmp0(qualifier, "sec") == 0) {
+        secondsToCount = 1;
+    } else {
+        g_printerr("unknown qualifier: '%s'\n", qualifier);
+        exit(EXIT_FAILURE);
     }
 
     // calculate the fraction here
@@ -257,7 +256,7 @@ static void parse_endtime(const char* time_str)
         @12:30 → at half past 12pm
         @9pm   → 21 o'clock
     */
-    GRegex *reltime = g_regex_new("^(?P<First>\\d{1,5})(?P<Part2>(?P<Format>[:,.])(?P<Second>\\d{1,6}))?(?P<Qualifier>[dhms]?)$",
+    GRegex *reltime = g_regex_new("^(?P<First>\\d{1,5})(?P<Part2>(?P<Format>[:,.])(?P<Second>\\d{1,6}))?(?P<Qualifier>([dhms]|sec|min)?)$",
             G_REGEX_CASELESS | G_REGEX_OPTIMIZE, 0, &error);
     if (reltime == NULL) {
         g_printerr("g_regex_new: %s\n", error->message);
@@ -587,7 +586,17 @@ int main(int argc, char **argv)
     g_assert(context != NULL);
     g_option_context_set_help_enabled(context, TRUE);
     g_option_context_set_summary(context,
-            "Possible Timeout values:\n  5s\t\t5 seconds\n  6.5m\t\t6:30 minutes\n  19\t\t19 minutes\n  7h\t\t7 hours\n  1,5d\t\t36 hours\n  @17\t\tat 17:00 o'clock\n  @17:25\tat 17:25 o'clock\n  @9.5pm\tat 21:30 o'clock");
+            "Possible Timeout values:\n"
+            "  5s\t\t5 seconds\n"
+            "  30sec\t\t30 seconds\n"
+            "  6.5m\t\t6:30 minutes\n"
+            "  3min\t\t3 minutes\n"
+            "  19\t\t19 minutes\n"
+            "  7h\t\t7 hours\n"
+            "  1,5d\t\t36 hours\n"
+            "  @17\t\tat 17:00 o'clock\n"
+            "  @17:25\tat 17:25 o'clock\n"
+            "  @9.5pm\tat 21:30 o'clock");
     g_option_context_add_main_entries(context, entries, NULL);
 
     /* adds GTK+ options */
