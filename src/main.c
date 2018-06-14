@@ -46,17 +46,13 @@
 #  define UNUSED(x) (void)x
 #endif
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
-
 /* globals */
-static const guint          MAX_SECONDS       = 7 * 24 * 3600;
 static const guint          BLINK_TRESHOLD    = 10;
 
 static gboolean             daemonize         = FALSE;
 static gboolean             quiet             = FALSE;
 static gboolean             verbose           = FALSE;
 static gboolean             version           = FALSE;
-/* static gboolean             stopall           = FALSE; */
 static gchar              **opt_remaining     = NULL;
 
 /* flag which indicates whether we are in
@@ -85,8 +81,6 @@ static GOptionEntry entries[] = {
     {"quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet, "do not play sounds", NULL},
     {"verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "be verbose", NULL},
     {"version", 0, 0, G_OPTION_ARG_NONE, &version, "print application version and exit", NULL},
-    /* {"stopall", 0, 0, G_OPTION_ARG_NONE, &stopall, "Stop all running galarm instances", NULL}, */
-    /* {"stop-all", 0, G_OPTION_FLAG_HIDDEN, G_OPTION_ARG_NONE, &stopall, NULL, NULL}, */
     {G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_STRING_ARRAY, &opt_remaining, "Message to display", "TIMEOUT [MESSAGE]"},
     {0, 0, 0, 0, 0, 0, 0}
 };
