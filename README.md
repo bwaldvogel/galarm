@@ -46,6 +46,12 @@ Dependencies
 
 …and a running **notification-daemon** to show popups
 
+On Ubuntu, the dependencies can be installed with
+
+```
+$ apt install build-essential pkg-config cmake libgtk2.0-dev libnotify-dev libcanberra-dev
+```
+
 TODOs
 -----
 
