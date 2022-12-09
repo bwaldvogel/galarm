@@ -16,7 +16,7 @@ characters as possible**.
 Installation
 ------------
 
-See [INSTALL][INSTALL]
+See [INSTALL](INSTALL)
 
 Usage
 -----
