@@ -12,6 +12,12 @@ The main design goal was to create a *small* and *fast* starting CLI tool which
 doesn't require any configuration. Instead you just start the tool with as **few
 characters as possible**.
 
+
+Installation
+------------
+
+See [INSTALL][INSTALL]
+
 Usage
 -----
 
