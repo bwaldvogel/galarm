@@ -1,9 +1,9 @@
 # used the cmake stuff of csync (https://dev.csync.org/) as template
 # ./src/CMakeLists.txt might be the more interesting file
 
-project(galarm C)
+cmake_minimum_required(VERSION 3.10...4.4)
 
-cmake_minimum_required(VERSION 2.4.6)
+project(galarm C)
 
 set(APPLICATION_NAME ${PROJECT_NAME})
 

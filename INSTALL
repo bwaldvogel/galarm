@@ -7,7 +7,7 @@
 In order to build galarm, you need to install several components:
 
 - A C compiler (galarm was tested with GCC 4)
-- [CMake](http://www.cmake.org) >= 2.4.6.
+- [CMake](https://cmake.org) >= 3.10
 - [GTK+](http://www.gtk.org) >= 2.12
 - [GLIB2](http://www.gtk.org) >= 2.14
 - [libnotify](http://www.galago-project.org) >= 0.3.2
