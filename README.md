@@ -3,13 +3,13 @@
 galarm
 ======
 
-GTK tool to popup an alarm message and play a sound after a configurable time
+GTK tool to pop up an alarm message and play a sound after a configurable time
 
 Description
 -----------
 
-The main design goal was to create a *small* and *fast* starting CLI tool which
-doesn't require any configuration. Instead you just start the tool with as **few
+The main design goal was to create a *small* and *fast-starting* CLI tool which
+doesn't require any configuration. Instead, you just start the tool with as **few
 characters as possible**.
 
 
@@ -21,7 +21,7 @@ See [INSTALL](INSTALL)
 Usage
 -----
 
-popup after 5 minutes:
+Pop up after 5 minutes:
 
 	# ga 5
 
@@ -46,13 +46,13 @@ Dependencies
 ------------
 
 - GTK+ 2.12 or higher
-- GLIB 2.14 or higher
+- GLib 2.14 or higher
 - [libnotify][libnotify] 0.3.2 or higher to trigger the notification popup
 - Optional: [libcanberra][libcanberra] 0.10 or higher for the event sound
 
-…and a running **notification-daemon** to show popups
+…and a running **notification-daemon** to show popups.
 
-On Ubuntu, the dependencies can be installed with
+On Ubuntu, the dependencies can be installed with:
 
 ```
 $ apt install build-essential pkg-config cmake libgtk2.0-dev libnotify-dev libcanberra-dev
@@ -68,17 +68,17 @@ TODOs
 	- resumeall …
 
 - recognize several running timers → collapse them
-	- -c (dont collapse) or something like this
+	- -c (don't collapse) or something like this
 
 - add option to specify popup-urgency
 
 - when activating the tray icon show a countdown window
 
 - Internationalisation
-	- 24h/12h format (configurable, dependent on locale)
+	- 24h/12h format (configurable, depending on the locale)
 
-- option to just count the time while beeing "online" so the time during
-  suspend-to-ram eg. isn't counted
+- option to only count time while the system is running, so that e.g. time
+  spent in suspend-to-RAM isn't counted
 
 - [avoid gettimeofday()][gettimeofday]
 
