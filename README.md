@@ -1,4 +1,4 @@
- [![Build Status](https://travis-ci.org/bwaldvogel/galarm.png?branch=master)](https://travis-ci.org/bwaldvogel/galarm)
+[![Build](https://github.com/bwaldvogel/galarm/actions/workflows/build.yml/badge.svg)](https://github.com/bwaldvogel/galarm/actions/workflows/build.yml)
 
 galarm
 ======
