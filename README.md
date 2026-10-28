@@ -49,4 +49,9 @@ galarm has no library dependencies, but at runtime it needs
 - `pw-play` (PipeWire) or `paplay` (PulseAudio) to play the alarm sound
 - a system tray that supports [StatusNotifierItem][sni] for the tray icon (optional)
 
+License
+-------
+
+galarm is licensed under the [MIT License](LICENSE).
+
 [sni]: https://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/
