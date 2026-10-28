@@ -23,22 +23,27 @@ impl Notifier {
         })
     }
 
-    /// Shows the notification and returns its id together with a listener for
-    /// its closing. The listener is subscribed before the notification is shown,
-    /// so it can't miss the signal.
+    /// Shows the notification with buttons for the given actions, as pairs of
+    /// key and label. Returns its id together with a listener for its events.
+    /// The listener is subscribed before the notification is shown, so it can't
+    /// miss a signal.
     pub fn show(
         &self,
         summary: &str,
         body: &str,
         icon_path: &str,
-    ) -> zbus::Result<(u32, ClosedListener)> {
+        actions: &[(&str, &str)],
+    ) -> zbus::Result<(u32, Listener)> {
         let rule = MatchRule::builder()
             .msg_type(message::Type::Signal)
             .interface(INTERFACE)?
-            .member("NotificationClosed")?
             .build();
         let signals = MessageIterator::for_match_rule(rule, &self.conn, None)?;
 
+        let actions: Vec<&str> = actions
+            .iter()
+            .flat_map(|&(key, label)| [key, label])
+            .collect();
         let hints = HashMap::from([("urgency", Value::U8(1))]); // normal
         let reply = self.conn.call_method(
             Some(DESTINATION),
@@ -51,13 +56,13 @@ impl Notifier {
                 icon_path,
                 summary,
                 body,
-                Vec::<&str>::new(),
+                actions,
                 hints,
                 NEVER_EXPIRES,
             ),
         )?;
         let id: u32 = reply.body().deserialize()?;
-        Ok((id, ClosedListener { id, signals }))
+        Ok((id, Listener { id, signals }))
     }
 
     pub fn close(&self, id: u32) -> zbus::Result<()> {
@@ -72,20 +77,43 @@ impl Notifier {
     }
 }
 
-pub struct ClosedListener {
+pub enum NotificationEvent {
+    ActionInvoked(String),
+    /// By the user, because it expired or because of an action
+    Closed,
+}
+
+/// Yields the events of one notification; blocks until the next one
+pub struct Listener {
     id: u32,
     signals: MessageIterator,
 }
 
-impl ClosedListener {
-    /// Blocks until the notification was closed, either by the user or because it expired
-    pub fn wait(self) {
-        for signal in self.signals.flatten() {
-            if let Ok((id, _reason)) = signal.body().deserialize::<(u32, u32)>()
-                && id == self.id
-            {
-                return;
+impl Iterator for Listener {
+    type Item = NotificationEvent;
+
+    fn next(&mut self) -> Option<NotificationEvent> {
+        for signal in self.signals.by_ref().flatten() {
+            let body = signal.body();
+            let member = signal.header().member().map(|member| member.to_string());
+            match member.as_deref() {
+                Some("ActionInvoked") => {
+                    if let Ok((id, key)) = body.deserialize::<(u32, String)>()
+                        && id == self.id
+                    {
+                        return Some(NotificationEvent::ActionInvoked(key));
+                    }
+                }
+                Some("NotificationClosed") => {
+                    if let Ok((id, _reason)) = body.deserialize::<(u32, u32)>()
+                        && id == self.id
+                    {
+                        return Some(NotificationEvent::Closed);
+                    }
+                }
+                _ => {}
             }
         }
+        None
     }
 }
