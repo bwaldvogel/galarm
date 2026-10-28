@@ -21,11 +21,18 @@ use signal_hook::iterator::Signals;
 
 use crate::alarm::{Alarm, Now};
 use crate::cli::{Cli, Options};
-use crate::notify::Notifier;
+use crate::notify::{NotificationEvent, Notifier};
 use crate::timeout::Timeout;
 use crate::tray::Tray;
 
 pub const APP_NAME: &str = "galarm";
+
+/// Buttons in the notification, as action key, label and time to extend by
+const EXTEND_TIME_ACTIONS: [(&str, &str, Duration); 3] = [
+    ("extend-1", "+1 min", Duration::from_secs(60)),
+    ("extend-5", "+5 min", Duration::from_secs(5 * 60)),
+    ("extend-10", "+10 min", Duration::from_secs(10 * 60)),
+];
 
 pub enum Event {
     TogglePause,
@@ -197,16 +204,36 @@ fn fire_alarm(
     options: &Options,
     events: Sender<Event>,
 ) -> Result<u32, Box<dyn Error>> {
-    let (id, closed) = notifier
+    let actions: Vec<_> = EXTEND_TIME_ACTIONS
+        .iter()
+        .map(|&(key, label, _)| (key, label))
+        .collect();
+    let (id, listener) = notifier
         .show(
             "Alarm",
             &markup::message(message),
             &icon_path.to_string_lossy(),
+            &actions,
         )
         .map_err(|e| format!("showing the notification: {e}"))?;
+    // After an action, the daemon closes the notification. ActionInvoked comes
+    // first, so the alarm is snoozed already and the closing is ignored.
     thread::spawn(move || {
-        closed.wait();
-        let _ = events.send(Event::NotificationClosed(id));
+        for event in listener {
+            match event {
+                NotificationEvent::ActionInvoked(key) => {
+                    if let Some(&(_, _, duration)) =
+                        EXTEND_TIME_ACTIONS.iter().find(|(k, ..)| *k == key)
+                    {
+                        let _ = events.send(Event::ExtendTime(duration));
+                    }
+                }
+                NotificationEvent::Closed => {
+                    let _ = events.send(Event::NotificationClosed(id));
+                    return;
+                }
+            }
+        }
     });
 
     if !options.quiet
