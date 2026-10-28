@@ -69,6 +69,10 @@ fn parse_relative(s: &str) -> Result<Duration, InvalidTimeout> {
 fn parse_absolute(s: &str, now: &Zoned) -> Result<Zoned, InvalidTimeout> {
     let (hour, mut rest) = digits(s, 2).ok_or(InvalidTimeout)?;
     let mut hour: i8 = hour.parse().map_err(|_| InvalidTimeout)?;
+    // "@14h" is the same as "@14"
+    if rest.eq_ignore_ascii_case("h") {
+        rest = "";
+    }
     let mut minute_and_second = [0i8; 2];
     for value in &mut minute_and_second {
         let Some(after_colon) = rest.strip_prefix(':') else {
@@ -203,6 +207,8 @@ mod tests {
 
         let tests = [
             ("@17", today(17, 0, 0)),
+            ("@14h", today(14, 0, 0)),
+            ("@7H", tomorrow(7, 0, 0)),
             ("@17:25", today(17, 25, 0)),
             ("@17:25:30", today(17, 25, 30)),
             ("@9am", today(9, 0, 0)),
@@ -215,6 +221,7 @@ mod tests {
             ("@7", tomorrow(7, 0, 0)),
             ("@0", tomorrow(0, 0, 0)),
             ("@24", tomorrow(0, 0, 0)),
+            ("@24h", tomorrow(0, 0, 0)),
             ("@24:00", tomorrow(0, 0, 0)),
             ("@24:00:00", tomorrow(0, 0, 0)),
         ];
@@ -273,6 +280,10 @@ mod tests {
             "@9pmx",
             "@123",
             "@24pm",
+            "@14hh",
+            "@14h30",
+            "@9hpm",
+            "@14:30h",
         ];
         for input in tests {
             assert_eq!(parse(input, &now()), Err(InvalidTimeout), "input: {input}");

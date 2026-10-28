@@ -18,6 +18,7 @@ Possible timeout values:
   7h        7 hours
   1,5d      36 hours
   @17       at 17:00 o'clock
+  @17h      at 17:00 o'clock
   @17:25    at 17:25 o'clock
   @9:30pm   at 21:30 o'clock";
 
