@@ -10,8 +10,10 @@ use ksni::{Icon, MenuItem, ToolTip};
 use crate::Event;
 use crate::assets::{ICON_ARGB, ICON_SIZE};
 
-const EXTEND_TIME_OPTIONS: [(&str, Duration); 4] = [
-    ("+1 minute", Duration::from_secs(60)),
+/// Directly in the menu, so it's a single click
+const EXTEND_TIME_QUICK: (&str, Duration) = ("+1 minute", Duration::from_secs(60));
+/// In the "Extend time" submenu
+const EXTEND_TIME_OPTIONS: [(&str, Duration); 3] = [
     ("+5 minutes", Duration::from_secs(5 * 60)),
     ("+15 minutes", Duration::from_secs(15 * 60)),
     ("+1 hour", Duration::from_secs(3600)),
@@ -66,7 +68,27 @@ impl ksni::Tray for Tray {
     }
 
     fn menu(&self) -> Vec<MenuItem<Self>> {
-        let mut items = Vec::new();
+        let (quick_label, quick_duration) = EXTEND_TIME_QUICK;
+        let mut items = vec![
+            StandardItem {
+                // an underscore marks an access key, two are a literal one
+                label: self.status.replace('_', "__"),
+                enabled: false,
+                ..Default::default()
+            }
+            .into(),
+            MenuItem::Separator,
+            extend_time_item(quick_label, quick_duration),
+            SubMenu {
+                label: "Extend time".into(),
+                submenu: EXTEND_TIME_OPTIONS
+                    .into_iter()
+                    .map(|(label, duration)| extend_time_item(label, duration))
+                    .collect(),
+                ..Default::default()
+            }
+            .into(),
+        ];
         if let Some(paused) = self.paused {
             items.push(
                 StandardItem {
@@ -79,17 +101,7 @@ impl ksni::Tray for Tray {
                 .into(),
             );
         }
-        items.push(
-            SubMenu {
-                label: "Extend time".into(),
-                submenu: EXTEND_TIME_OPTIONS
-                    .into_iter()
-                    .map(|(label, duration)| extend_time_item(label, duration))
-                    .collect(),
-                ..Default::default()
-            }
-            .into(),
-        );
+        items.push(MenuItem::Separator);
         items.push(
             StandardItem {
                 label: "Quit".into(),
