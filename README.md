@@ -1,9 +1,9 @@
- [![Build Status](https://travis-ci.org/bwaldvogel/galarm.png?branch=master)](https://travis-ci.org/bwaldvogel/galarm)
+[![Build](https://github.com/bwaldvogel/galarm/actions/workflows/build.yml/badge.svg)](https://github.com/bwaldvogel/galarm/actions/workflows/build.yml)
 
 galarm
 ======
 
-GTK tool to pop up an alarm message and play a sound after a configurable time
+Tool to pop up an alarm message and play a sound after a configurable time
 
 Description
 -----------
@@ -16,7 +16,12 @@ characters as possible**.
 Installation
 ------------
 
-See [INSTALL](INSTALL)
+galarm requires [Rust](https://rustup.rs/) 1.89 or higher:
+
+```
+$ cargo install --git https://github.com/bwaldvogel/galarm
+$ ln -s galarm ~/.cargo/bin/ga
+```
 
 Usage
 -----
@@ -45,18 +50,11 @@ Screenshots
 Dependencies
 ------------
 
-- GTK+ 2.12 or higher
-- GLib 2.14 or higher
-- [libnotify][libnotify] 0.3.2 or higher to trigger the notification popup
-- Optional: [libcanberra][libcanberra] 0.10 or higher for the event sound
+galarm has no library dependencies, but at runtime it needs
 
-…and a running **notification-daemon** to show popups.
-
-On Ubuntu, the dependencies can be installed with:
-
-```
-$ apt install build-essential pkg-config cmake libgtk2.0-dev libnotify-dev libcanberra-dev
-```
+- a running **notification daemon** to show popups
+- `pw-play` (PipeWire) or `paplay` (PulseAudio) to play the alarm sound
+- a system tray that supports [StatusNotifierItem][sni] for the tray icon (optional)
 
 TODOs
 -----
@@ -80,14 +78,9 @@ TODOs
 - option to only count time while the system is running, so that e.g. time
   spent in suspend-to-RAM isn't counted
 
-- [avoid gettimeofday()][gettimeofday]
-
 
 [screenshot1]: http://galarm.0x11.net/screenshot1.png
 [screenshot2]: http://galarm.0x11.net/screenshot2.png
 [screenshot3]: http://galarm.0x11.net/screenshot3.png
 
-[libnotify]: http://developer.gnome.org/libnotify/
-[libcanberra]: http://0pointer.de/lennart/projects/libcanberra/
-
-[gettimeofday]: http://blog.habets.pp.se/2010/09/gettimeofday-should-never-be-used-to-measure-time
+[sni]: https://www.freedesktop.org/wiki/Specifications/StatusNotifierItem/
