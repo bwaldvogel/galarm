@@ -1,13 +1,21 @@
 //! Tray icon via StatusNotifierItem
 
 use std::sync::mpsc::Sender;
+use std::time::Duration;
 
 use ksni::blocking::{Handle, TrayMethods};
-use ksni::menu::StandardItem;
+use ksni::menu::{StandardItem, SubMenu};
 use ksni::{Icon, MenuItem, ToolTip};
 
 use crate::Event;
 use crate::assets::{ICON_ARGB, ICON_SIZE};
+
+const EXTEND_TIME_OPTIONS: [(&str, Duration); 4] = [
+    ("+1 minute", Duration::from_secs(60)),
+    ("+5 minutes", Duration::from_secs(5 * 60)),
+    ("+15 minutes", Duration::from_secs(15 * 60)),
+    ("+1 hour", Duration::from_secs(3600)),
+];
 
 pub struct Tray {
     pub status: String,
@@ -72,6 +80,17 @@ impl ksni::Tray for Tray {
             );
         }
         items.push(
+            SubMenu {
+                label: "Extend time".into(),
+                submenu: EXTEND_TIME_OPTIONS
+                    .into_iter()
+                    .map(|(label, duration)| extend_time_item(label, duration))
+                    .collect(),
+                ..Default::default()
+            }
+            .into(),
+        );
+        items.push(
             StandardItem {
                 label: "Quit".into(),
                 activate: Box::new(|tray: &mut Self| {
@@ -83,4 +102,15 @@ impl ksni::Tray for Tray {
         );
         items
     }
+}
+
+fn extend_time_item(label: &str, duration: Duration) -> MenuItem<Tray> {
+    StandardItem {
+        label: label.into(),
+        activate: Box::new(move |tray: &mut Tray| {
+            let _ = tray.events.send(Event::ExtendTime(duration));
+        }),
+        ..Default::default()
+    }
+    .into()
 }
