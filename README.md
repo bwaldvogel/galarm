@@ -38,7 +38,7 @@ Pop up after 5 minutes:
 
 	# ga @12 dont forget the call
 
-You can also pause/resume countdowns or cancel alarms.
+You can also pause/resume countdowns, extend the time or cancel alarms.
 
 Dependencies
 ------------

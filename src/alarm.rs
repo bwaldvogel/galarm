@@ -71,6 +71,24 @@ impl Alarm {
         }
     }
 
+    /// Adds to the remaining time. Once the alarm went off, it counts from now on.
+    pub fn extend_time(&mut self, by: Duration, now: &Now) {
+        let left = self.left(now);
+        match &mut self.timeout {
+            Timeout::At(end) => {
+                if let Ok(extended) = now.zoned.checked_add(left + by) {
+                    *end = extended;
+                }
+            }
+            Timeout::Countdown(_) => {
+                self.remaining = left + by;
+                if self.started.is_some() {
+                    self.started = Some(now.instant);
+                }
+            }
+        }
+    }
+
     /// Shown as tooltip of the tray icon, e.g. "tea is ready: 00:04:59 (@17:25:30)"
     pub fn status(&self, message: &str, now: &Now) -> String {
         let left = self.left(now);
@@ -186,5 +204,46 @@ mod tests {
         alarm.toggle_pause(&start);
         assert!(!alarm.is_paused());
         assert_eq!(alarm.left(&after(&start, 27 * HOUR)), Duration::ZERO);
+    }
+
+    #[test]
+    fn extend_time_of_countdown() {
+        let start = start();
+        let mut alarm = Alarm::new(Timeout::Countdown(5 * MINUTE), &start);
+
+        alarm.extend_time(MINUTE, &after(&start, MINUTE));
+        assert_eq!(alarm.left(&after(&start, 2 * MINUTE)), 4 * MINUTE);
+
+        let paused_at = after(&start, 2 * MINUTE);
+        alarm.toggle_pause(&paused_at);
+        alarm.extend_time(5 * MINUTE, &after(&start, HOUR));
+        assert!(alarm.is_paused());
+        assert_eq!(alarm.left(&after(&start, 2 * HOUR)), 9 * MINUTE);
+    }
+
+    #[test]
+    fn extend_time_after_alarm_went_off() {
+        let start = start();
+        let later = after(&start, HOUR);
+
+        let mut countdown = Alarm::new(Timeout::Countdown(5 * MINUTE), &start);
+        countdown.extend_time(MINUTE, &later);
+        assert_eq!(countdown.left(&later), MINUTE);
+
+        let end = start.zoned.checked_add(5 * MINUTE).unwrap();
+        let mut fixed = Alarm::new(Timeout::At(end), &start);
+        fixed.extend_time(MINUTE, &later);
+        assert_eq!(fixed.left(&later), MINUTE);
+        assert_eq!(fixed.status("call", &later), "call: 00:01:00 (@09:01:00)");
+    }
+
+    #[test]
+    fn extend_time_of_fixed_end_time() {
+        let start = start();
+        let end = start.zoned.checked_add(HOUR).unwrap();
+        let mut alarm = Alarm::new(Timeout::At(end), &start);
+
+        alarm.extend_time(15 * MINUTE, &after(&start, MINUTE));
+        assert_eq!(alarm.status("call", &start), "call: 01:15:00 (@09:15:00)");
     }
 }

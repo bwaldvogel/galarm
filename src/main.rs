@@ -29,8 +29,9 @@ pub const APP_NAME: &str = "galarm";
 
 pub enum Event {
     TogglePause,
+    ExtendTime(Duration),
     Quit,
-    NotificationClosed,
+    NotificationClosed(u32),
 }
 
 fn main() -> ExitCode {
@@ -147,9 +148,19 @@ fn run(mut alarm: Alarm, options: &Options) -> Result<(), Box<dyn Error>> {
                 update_tray(&tray, |tray| tray.paused = Some(paused));
             }
             Ok(Event::TogglePause) => {}
-            Ok(Event::Quit | Event::NotificationClosed) | Err(RecvTimeoutError::Disconnected) => {
-                break;
+            Ok(Event::ExtendTime(by)) => {
+                alarm.extend_time(by, &Now::current());
+                // the alarm went off already, so it's snoozed
+                if let Some(id) = notification.take() {
+                    let _ = notifier.close(id);
+                    let paused = alarm.is_countdown().then(|| alarm.is_paused());
+                    update_tray(&tray, |tray| tray.paused = paused);
+                }
             }
+            Ok(Event::NotificationClosed(id)) if notification == Some(id) => break,
+            // a snoozed notification
+            Ok(Event::NotificationClosed(_)) => {}
+            Ok(Event::Quit) | Err(RecvTimeoutError::Disconnected) => break,
         }
     }
 
@@ -195,7 +206,7 @@ fn fire_alarm(
         .map_err(|e| format!("showing the notification: {e}"))?;
     thread::spawn(move || {
         closed.wait();
-        let _ = events.send(Event::NotificationClosed);
+        let _ = events.send(Event::NotificationClosed(id));
     });
 
     if !options.quiet
