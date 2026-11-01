@@ -11,7 +11,7 @@ repository = "https://github.com/bwaldvogel/galarm"
 jiff = "0.2"
 ksni = { version = "0.3", default-features = false, features = ["async-io", "blocking"] }
 signal-hook = "0.4.5"
-zbus = "5"
+zbus = "6"
 
 [profile.release]
 strip = true
